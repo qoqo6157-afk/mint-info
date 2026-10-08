@@ -44,3 +44,6 @@ mint info starter
 - 3~30자
 - 하이픈으로 시작하거나 끝날 수 없음
 - 공백/한글/기타 특수문자 금지
+
+[회원가입 오류 수정]
+기존 프로젝트에서는 fix_signup_error.sql을 Supabase SQL Editor에서 전체 실행하세요.

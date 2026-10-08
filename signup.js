@@ -3,8 +3,7 @@ const msg = document.querySelector('#message');
 
 const RESERVED_NAMES = new Set([
   'admin','administrator','root','login','logout','signup','register',
-  'dashboard','profile','settings','support','help','api','www',
-  'mint','mintinfo','mint-info'
+  'dashboard','profile','settings','support','help','api','www'
 ]);
 
 function normalizeSiteName(value) {
@@ -12,7 +11,7 @@ function normalizeSiteName(value) {
 }
 
 function validateSiteName(value) {
-  if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(value)) {
+  if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(value)) {
     return '사이트 주소 이름은 영문 소문자, 숫자, 하이픈(-)만 사용해 3~30자로 입력해 주세요. 하이픈으로 시작하거나 끝낼 수 없습니다.';
   }
   if (RESERVED_NAMES.has(value)) {
@@ -53,6 +52,24 @@ form.addEventListener('submit', async (e) => {
   if (usernameError) {
     msg.className = 'message error';
     msg.textContent = usernameError;
+    return;
+  }
+
+
+  const { data: check, error: checkError } = await db.rpc('check_signup_inputs', {
+    p_invite_code: invite_code,
+    p_username: username
+  });
+
+  if (checkError) {
+    msg.className = 'message error';
+    msg.textContent = '가입 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    return;
+  }
+
+  if (!check?.ok) {
+    msg.className = 'message error';
+    msg.textContent = check?.message || '가입 정보를 다시 확인해 주세요.';
     return;
   }
 
