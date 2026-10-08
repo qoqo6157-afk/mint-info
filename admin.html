@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>관리자 · mint info</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="dashboard.html" class="brand">← 내 페이지</a>
+  </header>
+
+  <main class="shell wide-shell">
+    <section class="card">
+      <div class="eyebrow">ADMIN</div>
+      <h1>초대 코드 관리</h1>
+      <p class="muted">코드는 한 번 사용되면 다시 사용할 수 없습니다.</p>
+
+      <div class="admin-controls">
+        <label>만료 기간
+          <select id="expiresDays">
+            <option value="">만료 없음</option>
+            <option value="1">1일</option>
+            <option value="7" selected>7일</option>
+            <option value="30">30일</option>
+          </select>
+        </label>
+        <button id="createBtn" class="btn primary">새 초대 코드 발급</button>
+      </div>
+
+      <p id="message" class="message"></p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>코드</th><th>상태</th><th>생성일</th><th>만료일</th><th>사용자</th></tr>
+          </thead>
+          <tbody id="codesBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

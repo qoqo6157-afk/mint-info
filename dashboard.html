@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>내 페이지 · mint info</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="index.html" class="brand">mint info</a>
+    <nav>
+      <a id="previewLink" href="#">공개 페이지</a>
+      <a href="admin.html">관리자</a>
+      <button id="logoutBtn" class="link-button">로그아웃</button>
+    </nav>
+  </header>
+
+  <main class="shell wide-shell">
+    <section class="card">
+      <div class="eyebrow">MY PAGE</div>
+      <h1>프로필 편집</h1>
+      <p class="muted">지금은 기본 프로필 편집만 들어간 1차 버전입니다. 자유배치 꾸미기는 다음 단계에서 붙이면 됩니다.</p>
+
+      <form id="profileForm" class="two-col">
+        <label>닉네임<input id="nickname" maxlength="30"></label>
+        <label>주소용 아이디<input id="username" maxlength="30" pattern="[A-Za-z0-9_-]+"></label>
+        <label class="full">한줄 소개<textarea id="bio" rows="5" maxlength="500"></textarea></label>
+        <label>배경색<input id="bgColor" type="color" value="#fff3f8"></label>
+        <label>포인트색<input id="accentColor" type="color" value="#ff7bac"></label>
+        <div class="full"><button class="btn primary" type="submit">저장</button></div>
+      </form>
+      <p id="message" class="message"></p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
