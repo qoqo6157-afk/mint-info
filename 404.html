@@ -187,32 +187,32 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
       return;
     }
 
-    const { data, error } = await db
-      .from('profiles')
-      .select('nickname, username, bio, theme')
-      .eq('username', username)
-      .maybeSingle();
+    const { data, error } = await db.rpc('get_public_profile', {
+      p_username: username
+    });
 
     if (error) {
       nicknameEl.textContent = '프로필을 불러오지 못했습니다.';
-      usernameEl.textContent = '';
+      usernameEl.textContent = '@' + username;
       bioEl.textContent = error.message;
       return;
     }
 
-    if (!data) {
+    const row = Array.isArray(data) ? data[0] : data;
+
+    if (!row) {
       nicknameEl.textContent = '프로필을 찾을 수 없습니다.';
       usernameEl.textContent = '@' + username;
       bioEl.textContent = '';
       return;
     }
 
-    document.title = `${data.nickname} · mint info`;
-    nicknameEl.textContent = data.nickname || data.username;
-    usernameEl.textContent = '@' + data.username;
-    bioEl.textContent = data.bio || '';
+    document.title = `${row.nickname} · mint info`;
+    nicknameEl.textContent = row.nickname || row.username;
+    usernameEl.textContent = '@' + row.username;
+    bioEl.textContent = row.bio || '';
 
-    const theme = data.theme || {};
+    const theme = row.theme || {};
     if (theme.background) document.body.style.background = theme.background;
     if (theme.accent) {
       document.documentElement.style.setProperty('--accent', theme.accent);

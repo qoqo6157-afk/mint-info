@@ -28,14 +28,11 @@ async function requireAdmin() {
     document.querySelector('.card').innerHTML = `
       <div class="eyebrow">ADMIN</div>
       <h1>관리자 권한이 없습니다.</h1>
-      <p class="muted">
-        최초 관리자용 ADMIN- 초대 코드로 가입한 계정만 이 페이지를 사용할 수 있습니다.
-      </p>
+      <p class="muted">이 프로젝트의 첫 번째 가입 계정이 관리자여야 합니다.</p>
       <a class="btn" href="dashboard.html">내 페이지로 돌아가기</a>
     `;
     return false;
   }
-
   return true;
 }
 
@@ -48,14 +45,11 @@ function statusOf(row) {
 async function loadCodes() {
   if (!(await requireAdmin())) return;
 
-  const { data, error } = await db
-    .from('invite_codes')
-    .select('code, created_at, expires_at, used_at, used_by')
-    .order('created_at', { ascending: false });
+  const { data, error } = await db.rpc('admin_list_invite_codes');
 
   if (error) {
     msg.className = 'message error';
-    msg.textContent = `초대 코드 목록을 불러오지 못했습니다: ${error.message}`;
+    msg.textContent = `초대 코드 목록 로드 실패: ${error.message}`;
     return;
   }
 
