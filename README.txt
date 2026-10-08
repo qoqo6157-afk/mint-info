@@ -47,3 +47,7 @@ mint info starter
 
 [회원가입 오류 수정]
 기존 프로젝트에서는 fix_signup_error.sql을 Supabase SQL Editor에서 전체 실행하세요.
+
+[예쁜 공개 주소]
+GitHub Pages에서는 404.html을 이용해 /mint-123 형태의 공개 주소를 표시합니다.
+예: https://사용자.github.io/mint-info/mint-123

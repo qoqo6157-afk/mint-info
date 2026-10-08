@@ -24,7 +24,7 @@ function updateSignupPreview() {
   const value = normalizeSiteName(document.querySelector('#username').value);
   const base = location.href.replace(/signup\.html(?:\?.*)?$/, '');
   signupUrlPreview.textContent = value
-    ? `${base}profile.html?u=${value}`
+    ? `${base}${value}`
     : '주소 이름을 입력하면 내 소개 사이트 주소가 여기에 표시됩니다.';
 }
 

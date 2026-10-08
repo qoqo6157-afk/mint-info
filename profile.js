@@ -4,7 +4,20 @@ const bioEl = document.querySelector('#bio');
 
 async function loadPublicProfile() {
   const params = new URLSearchParams(location.search);
-  const requested = (params.get('u') || '').trim().toLowerCase();
+  let requested = (params.get('u') || '').trim().toLowerCase();
+
+  if (!requested) {
+    const parts = location.pathname.split('/').filter(Boolean);
+    const knownFiles = new Set([
+      'index.html','login.html','signup.html','dashboard.html',
+      'admin.html','profile.html','404.html'
+    ]);
+
+    const last = parts[parts.length - 1] || '';
+    if (last && !knownFiles.has(last) && !last.includes('.')) {
+      requested = decodeURIComponent(last).trim().toLowerCase();
+    }
+  }
 
   if (!requested) {
     nicknameEl.textContent = '프로필을 찾을 수 없습니다.';

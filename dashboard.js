@@ -21,8 +21,16 @@ async function requireUser() {
   return user;
 }
 
+function siteBasePath() {
+  const path = location.pathname;
+  const marker = '/dashboard.html';
+  const idx = path.lastIndexOf(marker);
+  if (idx >= 0) return path.slice(0, idx + 1);
+  return path.endsWith('/') ? path : path.replace(/[^/]+$/, '');
+}
+
 function publicProfileUrl(username) {
-  return `profile.html?u=${encodeURIComponent(username)}`;
+  return `${siteBasePath()}${encodeURIComponent(username)}`;
 }
 
 function updateUrlPreview() {
