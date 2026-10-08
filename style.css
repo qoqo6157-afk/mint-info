@@ -134,3 +134,8 @@ th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);white-spa
   .topbar{padding:0 14px}
   .topbar nav{gap:10px}
 }
+
+.field-help{font-size:12px;font-weight:600;color:var(--muted);margin-top:-2px}
+.url-preview{display:block;font-size:12px;font-weight:800;color:var(--accent-deep);word-break:break-all;line-height:1.45;background:#effcf8;border:1px dashed #bfe9de;border-radius:10px;padding:9px 10px}
+
+input[readonly]{background:#f4fbf8;color:var(--muted);cursor:not-allowed}

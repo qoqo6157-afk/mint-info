@@ -137,11 +137,34 @@ declare
 begin
   v_invite := upper(trim(coalesce(new.raw_user_meta_data ->> 'invite_code', '')));
   v_nickname := trim(coalesce(new.raw_user_meta_data ->> 'nickname', 'new user'));
+  v_username := lower(trim(coalesce(new.raw_user_meta_data ->> 'username', '')));
 
   if v_invite = '' then
     raise exception 'INVITE_CODE_REQUIRED';
   end if;
 
+  -- 사이트 주소 이름 규칙:
+  -- 3~30자 / 영문 소문자, 숫자, 하이픈(-) 허용
+  -- 하이픈으로 시작하거나 끝나는 것은 금지 / 공백, 한글, 대문자, 기타 특수문자 금지
+  if v_username !~ '^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$' then
+    raise exception 'INVALID_SITE_NAME';
+  end if;
+
+  if v_username = any(array[
+    'admin','administrator','root','login','logout','signup','register',
+    'dashboard','profile','settings','support','help','api','www',
+    'mint','mintinfo'
+  ]) then
+    raise exception 'RESERVED_SITE_NAME';
+  end if;
+
+  if exists (
+    select 1 from public.profiles p where p.username = v_username
+  ) then
+    raise exception 'SITE_NAME_ALREADY_TAKEN';
+  end if;
+
+  -- 유효한 초대 코드 1회 사용 처리
   update public.invite_codes
      set used_at = now(),
          used_by = new.id
@@ -153,8 +176,6 @@ begin
   if v_kind is null then
     raise exception 'INVALID_OR_USED_INVITE_CODE';
   end if;
-
-  v_username := 'user_' || substr(replace(new.id::text, '-', ''), 1, 10);
 
   insert into public.profiles(id, nickname, username)
   values (

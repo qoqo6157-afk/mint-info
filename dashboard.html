@@ -20,11 +20,15 @@
     <section class="card">
       <div class="eyebrow">MY PAGE</div>
       <h1>프로필 편집</h1>
-      <p class="muted">지금은 기본 프로필 편집만 들어간 1차 버전입니다. 자유배치 꾸미기는 다음 단계에서 붙이면 됩니다.</p>
+      <p class="muted">프로필을 꾸미고, 아래에서 내 소개 사이트 주소 이름을 직접 정할 수 있습니다.</p>
 
       <form id="profileForm" class="two-col">
         <label>닉네임<input id="nickname" maxlength="30"></label>
-        <label>주소용 아이디<input id="username" maxlength="30" pattern="[A-Za-z0-9_-]+"></label>
+        <label>내 사이트 주소 이름
+          <input id="username" readonly>
+          <span class="field-help">가입할 때 정한 주소 이름입니다.</span>
+          <span id="urlPreview" class="url-preview"></span>
+        </label>
         <label class="full">한줄 소개<textarea id="bio" rows="5" maxlength="500"></textarea></label>
         <label>배경색<input id="bgColor" type="color" value="#fff3f8"></label>
         <label>포인트색<input id="accentColor" type="color" value="#ff7bac"></label>

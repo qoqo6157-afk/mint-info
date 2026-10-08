@@ -17,6 +17,17 @@
       <form id="signupForm">
         <label>초대 코드<input id="inviteCode" required autocomplete="off" placeholder="MINT-XXXXXXXXXXXX"></label>
         <label>닉네임<input id="nickname" required maxlength="30" placeholder="표시할 이름"></label>
+        <label>내 사이트 주소 이름
+          <input id="username" required minlength="3" maxlength="30"
+                 pattern="[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?"
+                 inputmode="latin"
+                 autocomplete="off"
+                 autocapitalize="none"
+                 spellcheck="false"
+                 placeholder="예: mint123">
+          <span class="field-help">영문 소문자/숫자/하이픈(-)만 · 3~30자 · 하이픈으로 시작/끝 금지</span>
+          <span id="signupUrlPreview" class="url-preview"></span>
+        </label>
         <label>이메일<input id="email" required type="email" autocomplete="email"></label>
         <label>비밀번호<input id="password" required type="password" minlength="8" autocomplete="new-password"></label>
         <button class="btn primary wide" type="submit">가입하기</button>

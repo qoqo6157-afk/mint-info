@@ -23,11 +23,26 @@ async function loadProfile() {
 
   nickname.value = data.nickname || '';
   username.value = data.username || '';
+  updateUrlPreview();
   bio.value = data.bio || '';
   bgColor.value = data.theme?.background || '#fff3f8';
   accentColor.value = data.theme?.accent || '#ff7bac';
   previewLink.href = `profile.html?u=${encodeURIComponent(data.username)}`;
 }
+
+
+function normalizeUsername(value) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+}
+
+function updateUrlPreview() {
+  const value = normalizeUsername(username.value || '');
+  const base = location.href.replace(/dashboard\.html(?:\?.*)?$/, '');
+  urlPreview.textContent = value
+    ? `${base}profile.html?u=${value}`
+    : '주소 이름을 입력하면 내 사이트 주소가 여기에 표시됩니다.';
+}
+
 
 profileForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -36,7 +51,6 @@ profileForm.addEventListener('submit', async (e) => {
 
   const payload = {
     nickname: nickname.value.trim(),
-    username: username.value.trim(),
     bio: bio.value.trim(),
     theme: {
       background: bgColor.value,
@@ -52,7 +66,8 @@ profileForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  previewLink.href = `profile.html?u=${encodeURIComponent(payload.username)}`;
+  previewLink.href = `profile.html?u=${encodeURIComponent(username.value)}`;
+  updateUrlPreview();
   msg.className = 'message success';
   msg.textContent = '저장했습니다.';
 });
