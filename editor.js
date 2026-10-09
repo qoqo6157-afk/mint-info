@@ -825,43 +825,86 @@ function uploadWidgetImage(done){
 }
 
 let cropState=null;
+function setCropFrame(aspectW=1,aspectH=1,title='이미지 자르기'){
+  const canvas=$('#cropCanvas');
+  const stage=$('#cropStage');
+  const guide=$('#cropGuide');
+  const maxWidth=420;
+  const ratio=Math.max(.15,aspectH/aspectW);
+  const canvasW=maxWidth;
+  const canvasH=Math.round(canvasW*ratio);
+  canvas.width=canvasW;
+  canvas.height=canvasH;
+  stage.style.aspectRatio=`${aspectW} / ${aspectH}`;
+  stage.style.width=`min(76vw, ${canvasW}px)`;
+  $('#cropTitle').textContent=title;
+  guide.dataset.mode = aspectW===1 && aspectH===1 ? 'square' : 'banner';
+}
 function drawCrop(){
   if(!cropState)return;
-  const c=$('#cropCanvas'),ctx=c.getContext('2d'),img=cropState.img,size=c.width;
-  ctx.clearRect(0,0,size,size);ctx.fillStyle='#e9efed';ctx.fillRect(0,0,size,size);
-  const base=Math.max(size/img.naturalWidth,size/img.naturalHeight);
+  const c=$('#cropCanvas'),ctx=c.getContext('2d'),img=cropState.img,cw=c.width,ch=c.height;
+  ctx.clearRect(0,0,cw,ch);
+  ctx.fillStyle='#e9efed';
+  ctx.fillRect(0,0,cw,ch);
+  const base=Math.max(cw/img.naturalWidth,ch/img.naturalHeight);
   const scale=base*cropState.zoom;
   const w=img.naturalWidth*scale,h=img.naturalHeight*scale;
-  const maxX=Math.max(0,(w-size)/2),maxY=Math.max(0,(h-size)/2);
-  cropState.x=clamp(cropState.x,-maxX,maxX);cropState.y=clamp(cropState.y,-maxY,maxY);
-  ctx.drawImage(img,(size-w)/2+cropState.x,(size-h)/2+cropState.y,w,h);
+  const maxX=Math.max(0,(w-cw)/2),maxY=Math.max(0,(h-ch)/2);
+  cropState.x=clamp(cropState.x,-maxX,maxX);
+  cropState.y=clamp(cropState.y,-maxY,maxY);
+  ctx.drawImage(img,(cw-w)/2+cropState.x,(ch-h)/2+cropState.y,w,h);
 }
 function closeCrop(result=null){
-  const modal=$('#cropModal');modal.hidden=true;
+  const modal=$('#cropModal');
+  modal.hidden=true;
   if(cropState?.objectUrl)URL.revokeObjectURL(cropState.objectUrl);
-  const resolve=cropState?.resolve;cropState=null;if(resolve)resolve(result);
+  const resolve=cropState?.resolve;
+  cropState=null;
+  if(resolve)resolve(result);
 }
-function openSquareCrop(file){
+function openCrop(file,opts={}){
+  const aspectW=opts.aspectW||1, aspectH=opts.aspectH||1, title=opts.title||'이미지 자르기';
   return new Promise((resolve,reject)=>{
     const objectUrl=URL.createObjectURL(file),img=new Image();
     img.onload=()=>{
-      cropState={img,objectUrl,zoom:1,x:0,y:0,resolve};
-      $('#cropZoom').value='1';$('#cropModal').hidden=false;drawCrop();
+      cropState={img,objectUrl,zoom:1,x:0,y:0,resolve,aspectW,aspectH,title};
+      setCropFrame(aspectW,aspectH,title);
+      $('#cropZoom').value='1';
+      $('#cropModal').hidden=false;
+      drawCrop();
     };
     img.onerror=()=>{URL.revokeObjectURL(objectUrl);reject(new Error('이미지를 불러오지 못했어요.'))};
     img.src=objectUrl;
   });
+}
+function openSquareCrop(file){
+  return openCrop(file,{aspectW:1,aspectH:1,title:'프로필 이미지 자르기'});
+}
+function openBannerCrop(file){
+  return openCrop(file,{aspectW:30,aspectH:9,title:'배너 이미지 자르기'});
 }
 function cropBlob(){
   return new Promise(resolve=>$('#cropCanvas').toBlob(resolve,'image/png',.96));
 }
 function initCropper(){
   const stage=$('#cropStage'),zoom=$('#cropZoom');let drag=null;
-  stage.addEventListener('pointerdown',e=>{if(!cropState)return;stage.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,ox:cropState.x,oy:cropState.y}});
-  stage.addEventListener('pointermove',e=>{if(!drag||!cropState)return;const rect=stage.getBoundingClientRect(),ratio=$('#cropCanvas').width/rect.width;cropState.x=drag.ox+(e.clientX-drag.x)*ratio;cropState.y=drag.oy+(e.clientY-drag.y)*ratio;drawCrop()});
-  stage.addEventListener('pointerup',()=>drag=null);stage.addEventListener('pointercancel',()=>drag=null);
+  stage.addEventListener('pointerdown',e=>{
+    if(!cropState)return;
+    stage.setPointerCapture(e.pointerId);
+    drag={x:e.clientX,y:e.clientY,ox:cropState.x,oy:cropState.y};
+  });
+  stage.addEventListener('pointermove',e=>{
+    if(!drag||!cropState)return;
+    const rect=stage.getBoundingClientRect(),ratio=$('#cropCanvas').width/rect.width;
+    cropState.x=drag.ox+(e.clientX-drag.x)*ratio;
+    cropState.y=drag.oy+(e.clientY-drag.y)*ratio;
+    drawCrop();
+  });
+  stage.addEventListener('pointerup',()=>drag=null);
+  stage.addEventListener('pointercancel',()=>drag=null);
   zoom.addEventListener('input',()=>{if(!cropState)return;cropState.zoom=+zoom.value;drawCrop()});
-  $('#cropCloseBtn').onclick=()=>closeCrop(null);$('#cropCancelBtn').onclick=()=>closeCrop(null);
+  $('#cropCloseBtn').onclick=()=>closeCrop(null);
+  $('#cropCancelBtn').onclick=()=>closeCrop(null);
   $('#cropConfirmBtn').onclick=async()=>{if(!cropState)return;const blob=await cropBlob();closeCrop(blob)};
   $('#cropModal').addEventListener('pointerdown',e=>{if(e.target===$('#cropModal'))closeCrop(null)});
 }
@@ -1130,7 +1173,21 @@ $('#siteBannerBtn').onclick=()=>$('#siteBannerInput').click();
 $('#siteBannerRemoveBtn').onclick=()=>{snapshot();setSiteBanner('');markDirty()};
 $('#siteBannerInput').onchange=async e=>{
   const f=e.target.files?.[0];if(!f)return;
-  try{const url=await uploadAsset(f);snapshot();setSiteBanner(url);markDirty();toast('사이트 배너 업로드 완료')}catch(err){toast(err.message,true)}
+  try{
+    let fileToUpload=f;
+    if((f.type||'').includes('gif')){
+      toast('GIF 배너는 자르기 없이 그대로 업로드합니다.');
+    }else{
+      const blob=await openBannerCrop(f);
+      if(!blob){e.target.value='';return;}
+      fileToUpload=new File([blob],`site-banner-${Date.now()}.png`,{type:'image/png'});
+    }
+    const url=await uploadAsset(fileToUpload);
+    snapshot();
+    setSiteBanner(url);
+    markDirty();
+    toast('사이트 배너 업로드 완료');
+  }catch(err){toast(err.message,true)}
   e.target.value='';
 };
 ['siteTitle','siteDescription'].forEach(id=>$('#'+id).addEventListener('input',markDirty));

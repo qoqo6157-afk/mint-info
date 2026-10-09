@@ -272,9 +272,9 @@ details.effect-box[open] > summary{margin-bottom:8px}
 .crop-dialog{width:min(92vw,520px);background:#fff;border-radius:18px;padding:16px;box-shadow:0 22px 70px rgba(0,0,0,.28)}
 .crop-dialog-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .crop-dialog-head b{font-size:14px;color:#28423d}.crop-dialog-head button{border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:#637a75}
-.crop-stage{position:relative;width:min(76vw,420px);aspect-ratio:1;margin:0 auto;background:#e9efed;overflow:hidden;touch-action:none;border-radius:10px}
+.crop-stage{position:relative;width:min(76vw,420px);aspect-ratio:1 / 1;margin:0 auto;background:#e9efed;overflow:hidden;touch-action:none;border-radius:10px}
 .crop-stage canvas{display:block;width:100%;height:100%;touch-action:none}
-.crop-guide{position:absolute;inset:0;border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 999px rgba(0,0,0,.10) inset;pointer-events:none}
+.crop-guide{position:absolute;inset:0;border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 999px rgba(0,0,0,.10) inset;pointer-events:none;border-radius:2px}.crop-guide[data-mode='square']{border-radius:0}.crop-guide[data-mode='banner']{border-radius:8px}
 .crop-help{font-size:11px;color:#6e817d;text-align:center;margin:10px 0}.crop-zoom-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;font-size:12px}.crop-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .widget-messenger .messenger-preview,.public-widget .messenger-preview{font-size:calc(12px * var(--messenger-scale,1))}
 .widget-messenger .msg-row,.public-widget .msg-row{gap:calc(8px * var(--messenger-scale,1));margin-bottom:calc(2px * var(--messenger-scale,1))}
