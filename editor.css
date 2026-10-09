@@ -305,3 +305,15 @@ details.effect-box[open] > summary{margin-bottom:8px}
 .widget-auto-scale > .preference-widget{
   min-height:100%;
 }
+
+
+/* Widget autoscale fix: inner UI must inherit the transformed coordinate system. */
+.widget-content > .widget-auto-scale,
+.public-widget > .widget-auto-scale{
+  position:relative;
+  transform-origin:0 0;
+  box-sizing:border-box;
+}
+.widget-content > .widget-auto-scale{
+  overflow:visible;
+}

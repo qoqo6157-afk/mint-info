@@ -131,6 +131,17 @@ function widgetAutoScale(el,targetMode=mode){
   const areaScale=Math.sqrt(Math.max(1,Number(l.w||b.w))*Math.max(1,Number(l.h||b.h))/(b.w*b.h));
   return clamp(areaScale,.45,3.2);
 }
+
+function applyWidgetAutoScaleToNode(node,el,targetMode=mode){
+  if(!node || !el || el.type!=='widget') return;
+  const inner=node.querySelector('.widget-auto-scale');
+  if(!inner) return;
+  const s=widgetAutoScale(el,targetMode);
+  inner.style.transform=`scale(${s})`;
+  inner.style.width=`${100/s}%`;
+  inner.style.height=`${100/s}%`;
+}
+
 function wrapWidgetScaledContent(wrap,el,markup){
   const s=widgetAutoScale(el);
   const inner=document.createElement('div');
@@ -626,6 +637,7 @@ function beginResize(e,el,node){
     l.h=Math.max(20,Math.round(oh+(lastY-startY)/scale));
     node.style.width=l.w+'px';
     node.style.height=l.h+'px';
+    applyWidgetAutoScaleToNode(node,el);
 
     const oldH=config.canvas[mode].height;
     ensureCanvasHeightForElement(el);
@@ -646,6 +658,8 @@ function beginResize(e,el,node){
     node.classList.remove('resizing');
     syncPositionFields();
     if(grew) renderEffects();
+    renderElements();
+    renderLayers();
     markDirty();
   };
 
