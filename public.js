@@ -83,9 +83,97 @@ function requestedName(){
 }
 function animClass(el){return el.animation?.type&&el.animation.type!=='none'?`anim-${el.animation.type}`:''}
 function applyAnim(node,el){const a=el.animation||{};node.style.setProperty('--anim-speed',`${a.speed||3}s`);node.style.setProperty('--anim-delay',`${a.delay||0}s`);node.style.setProperty('--anim-intensity',`${a.intensity||12}px`);node.style.setProperty('--anim-intensity-num',String((a.intensity||12)/100));node.style.setProperty('--anim-iteration',a.loop===false?'1':'infinite')}
-function content(el){const w=document.createElement('div');w.className='canvas-content';if(el.type==='text'){w.classList.add('text-content');w.textContent=el.props.text||'';Object.assign(w.style,{fontFamily:publicFont(el.props.fontFamily),fontSize:`${el.props.fontSize||32}px`,fontWeight:el.props.fontWeight||'800',color:el.props.color||'#111',background:'transparent',textAlign:el.props.align||'left',letterSpacing:`${el.props.letterSpacing||0}px`,lineHeight:String(el.props.lineHeight||1.2),display:'flex',alignItems:'center',padding:'8px',textShadow:el.props.textShadow?'0 3px 10px rgba(0,0,0,.22)':'none',WebkitTextStroke:`${el.props.textStroke||0}px rgba(0,0,0,.75)`})}else if(el.type==='image'||el.type==='sticker'){const img=document.createElement('img');img.src=el.props.src||'';img.alt='';img.style.objectFit=el.props.fit||'cover';w.appendChild(img)}else if(el.type==='button'){const a=document.createElement('a');a.className='button-content';a.textContent=el.props.text||'LINK';a.href=el.props.url||'#';a.target='_blank';a.rel='noopener noreferrer';a.style.background=el.props.bg||'#56cfb8';a.style.color=el.props.color||'#fff';w.appendChild(a)}else if(el.type==='shape'){const d=document.createElement('div');d.className='shape-content';d.style.background=el.props.fill||'#fff';d.style.border=`${el.props.borderWidth||0}px solid ${el.props.border||'#000'}`;w.appendChild(d)}w.style.borderRadius=`${el.borderRadius||0}px`;if(el.boxShadow)w.style.boxShadow='0 12px 30px rgba(25,70,62,.18)';return w}
+
+function escapePublic(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function splitPublic(v){return String(v||'').split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean)}
+function widgetShell(el,inner){
+  const p=el.props||{};
+  return `<div class="public-widget" style="background:${escapePublic(p.bg||'#fff')};color:${escapePublic(p.color||'#28423d')};--widget-accent:${escapePublic(p.accent||'#57cdb7')}">${inner}</div>`;
+}
+function publicWidgetMarkup(el){
+  const p=el.props||{}, title=escapePublic(p.title||'');
+  const head=title?`<div class="widget-head">${title}</div>`:'';
+  if(p.kind==='dday'){
+    let text='D-Day';
+    if(p.date){const now=new Date();now.setHours(0,0,0,0);const t=new Date(p.date+'T00:00:00');const d=Math.ceil((t-now)/86400000);text=d===0?'D-DAY':d>0?`D-${d}`:`D+${Math.abs(d)}`}
+    return widgetShell(el,`${head}<div class="dday-preview"><b>${escapePublic(p.label||'기념일')}</b><strong>${text}</strong></div>`);
+  }
+  if(p.kind==='visits') return widgetShell(el,`${head}<div class="stat-preview"><strong data-visits>0</strong><span>VISITORS</span></div>`);
+  if(p.kind==='likes') return widgetShell(el,`${head}<button class="public-like-btn" type="button" data-like>♡ ${escapePublic(p.likeLabel||'좋아요')} <b data-likes>0</b></button>`);
+  if(p.kind==='tags') return widgetShell(el,`${head}<div class="tag-preview">${splitPublic(p.tags).map(t=>`<span>#${escapePublic(t.replace(/^#/,''))}</span>`).join('')}</div>`);
+  if(p.kind==='preference'){
+    const l=splitPublic(p.leftItems).map(x=>`<li>♥ ${escapePublic(x)}</li>`).join('');
+    const r=splitPublic(p.rightItems).map(x=>`<li>× ${escapePublic(x)}</li>`).join('');
+    return widgetShell(el,`<div class="preference-widget"><div><b>${escapePublic(p.leftTitle||'NOTI')}</b><ul>${l}</ul></div><div><b>${escapePublic(p.rightTitle||'NG')}</b><ul>${r}</ul></div></div>`);
+  }
+  if(p.kind==='messenger'){
+    const msgs=p.messages||[];
+    return widgetShell(el,`${head}<div class="messenger-preview">${msgs.map(m=>`<div class="msg-row ${m.side==='right'?'right':'left'}">${m.side==='left'?`<div class="msg-avatar">${m.profile?`<img src="${escapePublic(m.profile)}">`:'●'}</div>`:''}<div class="msg-stack"><small>${escapePublic(m.name||'')}</small><div class="msg-bubble">${escapePublic(m.text||'')}${m.image?`<img src="${escapePublic(m.image)}">`:''}</div></div>${m.side==='right'?`<div class="msg-avatar">${m.profile?`<img src="${escapePublic(m.profile)}">`:'●'}</div>`:''}</div>`).join('')}</div>`);
+  }
+  if(p.kind==='friends'){
+    return widgetShell(el,`${head}<div class="friends-preview">${(p.items||[]).map(it=>`<a class="friend-card" href="${escapePublic(it.url||'#')}" target="_blank" rel="noopener noreferrer">${it.image?`<img src="${escapePublic(it.image)}">`:'<div class="friend-noimg"></div>'}<span>${escapePublic(it.label||it.username||'FRIEND')}</span></a>`).join('')}</div>`);
+  }
+  if(p.kind==='guestbook'){
+    return widgetShell(el,`${head}<div class="public-guestbook-list" data-guestbook-list></div><form class="public-guestbook-form" data-guestbook-form><input name="author" maxlength="30" placeholder="이름" required><textarea name="message" maxlength="500" rows="2" placeholder="${escapePublic(p.placeholder||'한마디 남겨주세요')}" required></textarea><button type="submit">남기기</button></form>`);
+  }
+  return widgetShell(el,head);
+}
+
+function content(el){const w=document.createElement('div');w.className='canvas-content';if(el.type==='text'){w.classList.add('text-content');w.textContent=el.props.text||'';Object.assign(w.style,{fontFamily:publicFont(el.props.fontFamily),fontSize:`${el.props.fontSize||32}px`,fontWeight:el.props.fontWeight||'800',color:el.props.color||'#111',background:'transparent',textAlign:el.props.align||'left',letterSpacing:`${el.props.letterSpacing||0}px`,lineHeight:String(el.props.lineHeight||1.2),display:'flex',alignItems:'center',padding:'8px',textShadow:el.props.textShadow?'0 3px 10px rgba(0,0,0,.22)':'none',WebkitTextStroke:`${el.props.textStroke||0}px rgba(0,0,0,.75)`})}else if(el.type==='image'||el.type==='sticker'){const img=document.createElement('img');img.src=el.props.src||'';img.alt='';img.style.objectFit=el.props.fit||'cover';w.appendChild(img)}else if(el.type==='button'){const a=document.createElement('a');a.className='button-content';a.textContent=el.props.text||'LINK';a.href=el.props.url||'#';a.target='_blank';a.rel='noopener noreferrer';a.style.background=el.props.bg||'#56cfb8';a.style.color=el.props.color||'#fff';w.appendChild(a)}else if(el.type==='shape'){const d=document.createElement('div');d.className='shape-content';d.style.background=el.props.fill||'#fff';d.style.border=`${el.props.borderWidth||0}px solid ${el.props.border||'#000'}`;w.appendChild(d)}else if(el.type==='widget'){w.classList.add('widget-content');w.innerHTML=publicWidgetMarkup(el)}w.style.borderRadius=`${el.borderRadius||0}px`;if(el.boxShadow)w.style.boxShadow='0 12px 30px rgba(25,70,62,.18)';return w}
 function applyBackground(c){const b=c.background||{};canvas.style.backgroundColor=b.color1||'#fff';canvas.style.backgroundImage='none';canvas.style.backgroundPosition='center';if(b.type==='gradient')canvas.style.backgroundImage=`linear-gradient(${b.angle||0}deg, ${b.color1}, ${b.color2})`;if(b.type==='image'&&b.image){canvas.style.backgroundImage=`url("${b.image}")`;if(b.fit==='repeat'){canvas.style.backgroundRepeat='repeat';canvas.style.backgroundSize='auto'}else{canvas.style.backgroundRepeat='no-repeat';canvas.style.backgroundSize=b.fit||'cover'}}}
-function render(){if(!site)return;const c=site.content;mode=innerWidth<=600?'mobile':'desktop';const size=c.canvas?.[mode]||{width:390,height:780};canvas.style.width=size.width+'px';canvas.style.height=size.height+'px';scaler.style.width=size.width+'px';scaler.style.height=size.height+'px';applyBackground(c);layer.innerHTML='';[...(c.elements||[])].sort((a,b)=>(a.z||0)-(b.z||0)).forEach(el=>{if(el.hidden)return;const l=el.layout?.[mode]||el.layout?.desktop;if(!l)return;const n=document.createElement('div');n.className=`public-element ${animClass(el)}`;Object.assign(n.style,{left:`${l.x}px`,top:`${l.y}px`,width:`${l.w}px`,height:`${l.h}px`,zIndex:String(el.z||1),opacity:String(el.opacity??1),transform:`rotate(${el.rotation||0}deg)`});applyAnim(n,el);n.appendChild(content(el));layer.appendChild(n)});MintEffects.render(fxLayer,c.effects||{});fit(size)}
+
+function visitorKey(){
+  let key=localStorage.getItem('mint_info_visitor_key');
+  if(!key){key=(crypto.randomUUID?crypto.randomUUID():`v-${Date.now()}-${Math.random()}`);localStorage.setItem('mint_info_visitor_key',key)}
+  return key;
+}
+async function hydrateWidgets(){
+  if(!site)return;
+  const username=site.username||requestedName();
+  const key=visitorKey();
+
+  if(layer.querySelector('[data-visits]')){
+    await db.rpc('record_page_visit',{p_username:username,p_visitor_key:key});
+  }
+  const {data:stats}=await db.rpc('get_widget_stats',{p_username:username,p_visitor_key:key});
+  const stat=Array.isArray(stats)?stats[0]:stats;
+  layer.querySelectorAll('[data-visits]').forEach(n=>n.textContent=stat?.visits??0);
+  layer.querySelectorAll('[data-likes]').forEach(n=>n.textContent=stat?.likes??0);
+  layer.querySelectorAll('[data-like]').forEach(btn=>{
+    btn.classList.toggle('liked',!!stat?.liked);
+    btn.onclick=async()=>{
+      btn.disabled=true;
+      const {data}=await db.rpc('toggle_page_like',{p_username:username,p_visitor_key:key});
+      const row=Array.isArray(data)?data[0]:data;
+      layer.querySelectorAll('[data-likes]').forEach(n=>n.textContent=row?.likes??0);
+      btn.classList.toggle('liked',!!row?.liked);
+      btn.disabled=false;
+    };
+  });
+
+  const gbLists=[...layer.querySelectorAll('[data-guestbook-list]')];
+  async function refreshGuestbook(){
+    if(!gbLists.length)return;
+    const {data}=await db.rpc('list_guestbook',{p_username:username});
+    gbLists.forEach(box=>{
+      box.innerHTML=(data||[]).map(x=>`<div class="guestbook-row"><b>${escapePublic(x.author_name)}</b><span>${escapePublic(x.message)}</span></div>`).join('')||'<div class="widget-empty">아직 방명록이 없어요.</div>';
+    });
+  }
+  await refreshGuestbook();
+
+  layer.querySelectorAll('[data-guestbook-form]').forEach(form=>{
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      const fd=new FormData(form);
+      const author=String(fd.get('author')||'').trim(), message=String(fd.get('message')||'').trim();
+      if(!author||!message)return;
+      const {error}=await db.rpc('add_guestbook_entry',{p_username:username,p_author_name:author,p_message:message});
+      if(!error){form.reset();await refreshGuestbook();}
+    };
+  });
+}
+
+function render(){if(!site)return;const c=site.content;mode=innerWidth<=600?'mobile':'desktop';const size=c.canvas?.[mode]||{width:390,height:780};canvas.style.width=size.width+'px';canvas.style.height=size.height+'px';scaler.style.width=size.width+'px';scaler.style.height=size.height+'px';applyBackground(c);layer.innerHTML='';[...(c.elements||[])].sort((a,b)=>(a.z||0)-(b.z||0)).forEach(el=>{if(el.hidden)return;const l=el.layout?.[mode]||el.layout?.desktop;if(!l)return;const n=document.createElement('div');n.className=`public-element ${animClass(el)}`;Object.assign(n.style,{left:`${l.x}px`,top:`${l.y}px`,width:`${l.w}px`,height:`${l.h}px`,zIndex:String(el.z||1),opacity:String(el.opacity??1),transform:`rotate(${el.rotation||0}deg)`});applyAnim(n,el);n.appendChild(content(el));layer.appendChild(n)});MintEffects.render(fxLayer,c.effects||{});fit(size);hydrateWidgets()}
 function fit(size){const scale=Math.min(1,innerWidth/size.width);scaler.style.transform=`scale(${scale})`;wrap.style.height=(size.height*scale)+'px';}
 async function load(){const name=requestedName();if(!name){loading.textContent='프로필 주소가 없습니다.';return}const {data,error}=await db.rpc('get_public_site',{p_username:name});if(error){loading.textContent=`페이지를 불러오지 못했습니다: ${error.message}`;return}const row=Array.isArray(data)?data[0]:data;if(!row){loading.textContent='공개된 페이지를 찾을 수 없습니다.';return}site=row;document.title=`${row.nickname} · mint info`;loading.hidden=true;wrap.hidden=false;render()}
 window.addEventListener('resize',()=>site&&render());load();
