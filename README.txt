@@ -1,20 +1,27 @@
-mint info EDITOR V4
+mint info EDITOR V5
 
-이번 수정
-- 눈 효과: Web Animations API 방식으로 재작성
-- 꽃잎 효과: Web Animations API 방식으로 재작성
-- 비 / 반짝이도 같은 효과 엔진으로 통일
-- 배경 효과 4종 설정창을 접을 수 없게 하고 항상 전부 표시
-- 드래그/리사이즈를 requestAnimationFrame 기반으로 변경해 버벅임 감소
-- 드래그 중 우측 입력값을 매 프레임 갱신하지 않도록 변경
-- 캔버스 자동 확장 중 효과 전체를 계속 재생성하던 병목 제거
-- 커스텀 폰트 변경 시 폰트별 권장 굵기를 자동 적용
-- 공백/한글 파일명의 폰트 URL을 안전하게 인코딩
-- 박스 그림자 옵션 제거 + 기존 저장 데이터의 박스 그림자도 무시
+이번 수정:
+- 드래그 버벅임의 실제 원인 수정:
+  선택할 때 요소 DOM을 다시 만드는 바람에 '보이는 요소'가 아니라 이미 제거된 요소를 끌고 있던 문제를 제거했습니다.
+- 드래그 중 left/top을 계속 바꾸지 않고 GPU translate로 움직이게 변경했습니다.
+- 마우스를 놓을 때만 실제 X/Y 좌표를 확정합니다.
+- 캔버스 자동 확장은 300px 단위로만 발생해 드래그 중 레이아웃 계산을 크게 줄였습니다.
+- 폰트 선택 시 FontFace API로 실제 폰트 파일을 직접 불러옵니다.
+- 폰트가 없으면 우측 속성창에 '폰트 파일을 찾지 못했어요'가 표시됩니다.
+- 공개 페이지도 동일하게 FontFace API로 폰트를 로드합니다.
 
 SQL 필요 없음.
 
-중요: 폰트 바이너리는 이 ZIP에 포함되어 있지 않습니다.
-기존 원본 폰트 파일 7개는 GitHub에서 index.html과 같은 위치에 그대로 있어야 합니다.
+중요:
+이 ZIP에는 폰트 파일 자체가 들어있지 않습니다.
+아래 원본 파일 7개가 GitHub에서 index.html과 같은 위치에 실제로 존재해야 합니다.
 
-GitHub에 ZIP 파일 전체 덮어쓰기 후 Ctrl+F5 해주세요.
+Paperlogy-5Medium.ttf
+Paperlogy-3Light.ttf
+Jalnan2.otf
+Puzzle Sans.ttf
+원주체 Regular.otf
+PyeongChangPeace-Bold.otf
+BMJUA_ttf.ttf
+
+GitHub에 ZIP 전체를 덮어쓴 뒤 Ctrl+F5 하세요.

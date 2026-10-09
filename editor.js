@@ -70,6 +70,53 @@ const FONT_STACKS = {
   'Times New Roman': '"Times New Roman", serif'
 };
 
+const CUSTOM_FONT_FILES = {
+  'Paperlogy': [
+    {url:'./Paperlogy-3Light.ttf', weight:'300'},
+    {url:'./Paperlogy-5Medium.ttf', weight:'500'}
+  ],
+  'Jalnan2': [{url:'./Jalnan2.otf', weight:'400'}],
+  'Puzzle Sans': [{url:'./Puzzle%20Sans.ttf', weight:'400'}],
+  'Wonju': [{url:'./%EC%9B%90%EC%A3%BC%EC%B2%B4%20Regular.otf', weight:'400'}],
+  'PyeongChang Peace': [{url:'./PyeongChangPeace-Bold.otf', weight:'700'}],
+  'BM Jua': [{url:'./BMJUA_ttf.ttf', weight:'400'}]
+};
+
+const loadedCustomFonts = new Map();
+
+async function ensureCustomFontLoaded(family){
+  if(!CUSTOM_FONT_FILES[family]) return true;
+  if(loadedCustomFonts.get(family) === true) return true;
+
+  try{
+    for(const item of CUSTOM_FONT_FILES[family]){
+      const face = new FontFace(family, `url("${item.url}")`, {
+        weight:item.weight,
+        style:'normal'
+      });
+      const loaded = await face.load();
+      document.fonts.add(loaded);
+    }
+    loadedCustomFonts.set(family,true);
+    return true;
+  }catch(err){
+    console.error('Font load failed:', family, err);
+    loadedCustomFonts.set(family,false);
+    return false;
+  }
+}
+
+async function preloadCustomFonts(){
+  await Promise.allSettled(Object.keys(CUSTOM_FONT_FILES).map(ensureCustomFontLoaded));
+}
+
+function setFontStatus(text,type=''){
+  const el=$('#fontLoadStatus');
+  if(!el) return;
+  el.textContent=text||'';
+  el.className=`font-load-status ${type}`.trim();
+}
+
 function normalizeFontFamily(value){
   const v = String(value || 'system-ui').trim();
   const legacy = {
@@ -92,11 +139,7 @@ function cssFontFamily(value){
   return FONT_STACKS[key] || key || FONT_STACKS['system-ui'];
 }
 
-function warmCustomFonts(){
-  if(!document.fonts) return;
-  ['Paperlogy','Jalnan2','Puzzle Sans','Wonju','PyeongChang Peace','BM Jua']
-    .forEach(name => document.fonts.load(`24px "${name}"`).catch(()=>{}));
-}
+function warmCustomFonts(){ preloadCustomFonts(); }
 
 function ensureCanvasHeightForElement(el, margin=120){
   const l=layoutOf(el);
@@ -269,19 +312,36 @@ function renderLayers(){
 }
 
 function selectElement(id){selectedId=id;renderElements();renderLayers();renderInspector()}
+
+function selectElementForPointer(id,node){
+  if(selectedId===id) return;
+  selectedId=id;
+  elementsLayer.querySelectorAll('.canvas-element.selected').forEach(n=>n.classList.remove('selected'));
+  node.classList.add('selected');
+  renderLayers();
+  renderInspector();
+}
 function deleteElement(id){snapshot();config.elements=config.elements.filter(e=>e.id!==id);if(selectedId===id)selectedId=null;renderAll()}
 
 function beginDrag(e,el,node){
   if(e.target.classList.contains('resize-handle')) return;
   e.stopPropagation();
-  selectElement(el.id);
-  if(el.locked) return;
   e.preventDefault();
 
+  selectElementForPointer(el.id,node);
+  if(el.locked) return;
+
   const l=layoutOf(el);
-  const startX=e.clientX, startY=e.clientY, ox=l.x, oy=l.y;
+  const startX=e.clientX;
+  const startY=e.clientY;
+  const ox=l.x;
+  const oy=l.y;
   const scale=zoom;
-  let lastX=e.clientX, lastY=e.clientY;
+
+  let lastX=startX;
+  let lastY=startY;
+  let dx=0;
+  let dy=0;
   let raf=0;
   let grew=false;
 
@@ -290,14 +350,24 @@ function beginDrag(e,el,node){
 
   const paint=()=>{
     raf=0;
-    l.x=Math.round(ox+(lastX-startX)/scale);
-    l.y=Math.round(oy+(lastY-startY)/scale);
-    node.style.left=l.x+'px';
-    node.style.top=l.y+'px';
+    dx=(lastX-startX)/scale;
+    dy=(lastY-startY)/scale;
 
-    const oldH=config.canvas[mode].height;
-    ensureCanvasHeightForElement(el);
-    if(config.canvas[mode].height!==oldH) grew=true;
+    // GPU-friendly movement: does not reflow the whole canvas.
+    node.style.translate=`${dx}px ${dy}px`;
+
+    const candidateY=Math.round(oy+dy);
+    const bottom=candidateY+l.h+120;
+    const c=config.canvas[mode];
+
+    if(bottom>c.height){
+      // Grow in chunks, not on every pointer pixel.
+      c.height=Math.ceil((bottom+180)/300)*300;
+      canvas.style.height=c.height+'px';
+      stageScaler.style.height=(c.height*zoom)+'px';
+      $('#canvasSizeText').textContent=`${c.width} × ${c.height}`;
+      grew=true;
+    }
   };
 
   const move=ev=>{
@@ -310,8 +380,20 @@ function beginDrag(e,el,node){
   const up=()=>{
     window.removeEventListener('pointermove',move);
     window.removeEventListener('pointerup',up);
-    if(raf){ cancelAnimationFrame(raf); paint(); }
+
+    if(raf){
+      cancelAnimationFrame(raf);
+      paint();
+    }
+
+    l.x=Math.round(ox+dx);
+    l.y=Math.round(oy+dy);
+
+    node.style.translate='';
+    node.style.left=l.x+'px';
+    node.style.top=l.y+'px';
     node.classList.remove('dragging');
+
     syncPositionFields();
     renderLayers();
     if(grew) renderEffects();
@@ -396,7 +478,15 @@ function renderInspector(){
   $('#rotation').value=el.rotation||0;$('#rotationV').textContent=`${el.rotation||0}°`;$('#opacity').value=el.opacity??1;$('#opacityV').textContent=`${Math.round((el.opacity??1)*100)}%`;$('#borderRadius').value=el.borderRadius||0;$('#radiusV').textContent=`${el.borderRadius||0}px`;
   $('#lockBtn').textContent=el.locked?'잠금 해제':'잠금';$('#hideBtn').textContent=el.hidden?'표시':'숨김';
   $('#textControls').hidden=el.type!=='text';$('#buttonControls').hidden=el.type!=='button';$('#shapeControls').hidden=el.type!=='shape';$('#imageControls').hidden=!(el.type==='image'||el.type==='sticker');
-  if(el.type==='text'){$('#textValue').value=el.props.text||'';$('#fontFamily').value=normalizeFontFamily(el.props.fontFamily);$('#fontSize').value=el.props.fontSize||32;$('#fontWeight').value=el.props.fontWeight||'800';$('#textColor').value=el.props.color||'#173b35';$('#textAlign').value=el.props.align||'left';$('#letterSpacing').value=el.props.letterSpacing||0;$('#lineHeight').value=el.props.lineHeight||1.2;$('#textShadow').checked=!!el.props.textShadow;$('#textStroke').value=el.props.textStroke||0;}
+  if(el.type==='text'){
+    $('#textValue').value=el.props.text||'';
+    const currentFont=normalizeFontFamily(el.props.fontFamily);
+    $('#fontFamily').value=currentFont;
+    if(CUSTOM_FONT_FILES[currentFont]){
+      const status=loadedCustomFonts.get(currentFont);
+      setFontStatus(status===true?'폰트 적용됨':status===false?'폰트 파일 로드 실패':'폰트 확인 중…',status===true?'ok':status===false?'error':'');
+    }else setFontStatus('');
+    $('#fontSize').value=el.props.fontSize||32;$('#fontWeight').value=el.props.fontWeight||'800';$('#textColor').value=el.props.color||'#173b35';$('#textAlign').value=el.props.align||'left';$('#letterSpacing').value=el.props.letterSpacing||0;$('#lineHeight').value=el.props.lineHeight||1.2;$('#textShadow').checked=!!el.props.textShadow;$('#textStroke').value=el.props.textStroke||0;}
   if(el.type==='button'){$('#buttonText').value=el.props.text||'';$('#buttonUrl').value=el.props.url||'';$('#buttonBg').value=el.props.bg||'#56cfb8';$('#buttonColor').value=el.props.color||'#ffffff';}
   if(el.type==='shape'){$('#shapeFill').value=el.props.fill||'#ffffff';$('#shapeBorder').value=el.props.border||'#9adfce';$('#shapeBorderWidth').value=el.props.borderWidth||0;}
   if(el.type==='image'||el.type==='sticker') $('#imageFit').value=el.props.fit||'cover';
@@ -413,7 +503,7 @@ function bindInspector(){
     if(id==='elName')el.name=$('#elName').value;if(id==='elX')l.x=+$(`#${id}`).value;if(id==='elY')l.y=+$(`#${id}`).value;if(id==='elW')l.w=Math.max(20,+$(`#${id}`).value);if(id==='elH')l.h=Math.max(20,+$(`#${id}`).value);if(id==='rotation')el.rotation=+$(`#${id}`).value;if(id==='opacity')el.opacity=+$(`#${id}`).value;if(id==='borderRadius')el.borderRadius=+$(`#${id}`).value;
     renderElements();renderLayers();markDirty();renderInspector();
   }));
-  const map={textValue:['text','text'],fontFamily:['text','fontFamily'],fontSize:['text','fontSize'],fontWeight:['text','fontWeight'],textColor:['text','color'],textAlign:['text','align'],letterSpacing:['text','letterSpacing'],lineHeight:['text','lineHeight'],textShadow:['text','textShadow'],textStroke:['text','textStroke'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
+  const map={textValue:['text','text'],fontSize:['text','fontSize'],fontWeight:['text','fontWeight'],textColor:['text','color'],textAlign:['text','align'],letterSpacing:['text','letterSpacing'],lineHeight:['text','lineHeight'],textShadow:['text','textShadow'],textStroke:['text','textStroke'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
   Object.entries(map).forEach(([id])=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el)return;snapshot();let v=$('#'+id).type==='checkbox'?$('#'+id).checked:$('#'+id).value;if(['fontSize','letterSpacing','lineHeight','textStroke','shapeBorderWidth'].includes(id))v=+v;el.props[map[id][1]]=v;renderElements();markDirty()}));
 
   $('#fontFamily').addEventListener('change',async()=>{
@@ -432,13 +522,19 @@ function bindInspector(){
       'PyeongChang Peace':'700',
       'BM Jua':'400'
     };
+
     if(recommended[family]){
+      setFontStatus('폰트 불러오는 중…');
+      const ok=await ensureCustomFontLoaded(family);
+      if(!ok){
+        setFontStatus('폰트 파일을 찾지 못했어요. GitHub 루트의 파일명을 확인해 주세요.','error');
+      }else{
+        setFontStatus('폰트 적용됨','ok');
+      }
       el.props.fontWeight=recommended[family];
       $('#fontWeight').value=recommended[family];
-    }
-
-    if(document.fonts && recommended[family]){
-      try{ await document.fonts.load(`24px "${family}"`); }catch(_){}
+    }else{
+      setFontStatus('');
     }
 
     renderElements();

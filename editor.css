@@ -179,3 +179,22 @@
   color:#fff;
   text-shadow:0 0 5px rgba(53,123,112,.62),0 0 12px rgba(255,255,255,.98);
 }
+
+/* V5 ultra-smooth pointer dragging */
+.canvas-element.dragging{
+  pointer-events:none;
+  will-change:translate;
+  transition:none!important;
+}
+.canvas-element{
+  backface-visibility:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.font-load-status{
+  min-height:14px;
+  font-size:11px;
+  font-weight:700;
+  color:#6a8b84;
+}
+.font-load-status.ok{color:#30937f}
+.font-load-status.error{color:#d34a61}

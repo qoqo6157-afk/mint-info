@@ -15,6 +15,28 @@ const PUBLIC_FONT_STACKS = {
   'Courier New': '"Courier New", monospace',
   'Times New Roman': '"Times New Roman", serif'
 };
+
+const PUBLIC_CUSTOM_FONT_FILES={
+  'Paperlogy':[
+    {url:'./Paperlogy-3Light.ttf',weight:'300'},
+    {url:'./Paperlogy-5Medium.ttf',weight:'500'}
+  ],
+  'Jalnan2':[{url:'./Jalnan2.otf',weight:'400'}],
+  'Puzzle Sans':[{url:'./Puzzle%20Sans.ttf',weight:'400'}],
+  'Wonju':[{url:'./%EC%9B%90%EC%A3%BC%EC%B2%B4%20Regular.otf',weight:'400'}],
+  'PyeongChang Peace':[{url:'./PyeongChangPeace-Bold.otf',weight:'700'}],
+  'BM Jua':[{url:'./BMJUA_ttf.ttf',weight:'400'}]
+};
+async function preloadPublicFonts(){
+  for(const [family,items] of Object.entries(PUBLIC_CUSTOM_FONT_FILES)){
+    for(const item of items){
+      try{
+        const face=new FontFace(family,`url("${item.url}")`,{weight:item.weight,style:'normal'});
+        document.fonts.add(await face.load());
+      }catch(err){ console.error('Public font failed',family,err); }
+    }
+  }
+}
 function normalizePublicFont(value){
   const v=String(value||'system-ui').trim();
   const legacy={
