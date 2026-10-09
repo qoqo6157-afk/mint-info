@@ -317,3 +317,15 @@ details.effect-box[open] > summary{margin-bottom:8px}
 .widget-content > .widget-auto-scale{
   overflow:visible;
 }
+
+
+/* LOCK THROUGH V1
+   Locked elements stay visible but do not intercept canvas pointer input.
+   This lets users select/drag/resize elements underneath them.
+   Locked elements can still be selected/unlocked from the Layers panel. */
+.canvas-element.locked{
+  pointer-events:none !important;
+}
+.canvas-element.locked .resize-handle{
+  pointer-events:none !important;
+}
