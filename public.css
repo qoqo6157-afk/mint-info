@@ -171,3 +171,15 @@ body.public-site-body,
     scale:1 1;
   }
 }
+
+
+/* SHIMEJI MOBILE STABILITY V5 */
+@media (max-width: 700px){
+  .public-shimeji{
+    /* Keep ordinary vertical page scrolling natural unless the sprite is intentionally dragged. */
+    touch-action:pan-y;
+  }
+  .public-shimeji.held{
+    touch-action:none;
+  }
+}

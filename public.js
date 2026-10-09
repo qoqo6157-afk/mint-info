@@ -304,12 +304,12 @@ function clearPublicShimeji(){
 function renderPublicShimeji(){
   clearPublicShimeji();
   const root=document.getElementById('publicShimejiLayer');
-  const s=site?.content?.effects?.shimeji||{enabled:false,images:[],size:76,speed:1,bounce:.65};
+  const s=site?.content?.effects?.shimeji||{enabled:false,images:[],size:76,speed:1,bounce:.25};
   if(!root||!s.enabled||!Array.isArray(s.images)||!s.images.length)return;
 
   const size=Math.max(28,Number(s.size||76));
   const walkSpeed=Math.max(.1,Number(s.speed||1));
-  const bounce=Math.max(.15,Math.min(1,Number(s.bounce||.65)));
+  const bounce=Math.max(0,Math.min(1,Number.isFinite(Number(s.bounce))?Number(s.bounce):.25));
   const sprites=[];
 
   s.images.slice(0,12).forEach((url,i)=>{
@@ -360,7 +360,8 @@ function renderPublicShimeji(){
     el.addEventListener('pointermove',e=>{
       if(e.pointerId!==sp.pointerId)return;
       const dist=Math.hypot(e.clientX-sp.pressX,e.clientY-sp.pressY);
-      if(!sp.dragging && dist<9)return;
+      const dragThreshold=(e.pointerType==='touch'||e.pointerType==='pen')?18:9;
+      if(!sp.dragging && dist<dragThreshold)return;
 
       if(!sp.dragging){
         sp.dragging=true;
@@ -380,8 +381,10 @@ function renderPublicShimeji(){
       if(e.pointerId!==sp.pointerId)return;
       if(sp.dragging){
         // Only an actual drag becomes a throw.
-        sp.vx*=16;
-        sp.vy*=16;
+        // Touch throws are intentionally softer so mobile scrolling/gestures don't launch sprites across the screen.
+        const throwPower=(e.pointerType==='touch'||e.pointerType==='pen')?7:12;
+        sp.vx*=throwPower;
+        sp.vy*=throwPower;
         el.classList.remove('held');
       }else{
         // A simple click/tap stays in place and only does the soft "boing".
@@ -401,12 +404,21 @@ function renderPublicShimeji(){
   });
 
   let last=performance.now();
+  let lastViewportH=innerHeight;
   const tick=now=>{
     const dt=Math.min(32,now-last);last=now;
-    const floor=Math.max(0,innerHeight-size);
+    const viewportH=innerHeight;
+    const floor=Math.max(0,viewportH-size);
     const maxX=Math.max(0,innerWidth-size);
+    const viewportChanged=Math.abs(viewportH-lastViewportH)>2;
 
     for(const sp of sprites){
+      // Mobile browser UI opening/closing while the page scrolls changes innerHeight.
+      // Snap grounded sprites to the new floor without treating that as an impact.
+      if(viewportChanged && sp.pointerId===null && sp.y>=Math.max(0,lastViewportH-size)-4){
+        sp.y=floor;
+        sp.vy=0;
+      }
       if(sp.hopActive && sp.pointerId===null){
         sp.hopT += dt;
         const t=sp.hopT/360;
@@ -437,11 +449,11 @@ function renderPublicShimeji(){
         sp.x+=sp.vx*dt;
         sp.y+=sp.vy*dt;
 
-        if(sp.x<0){sp.x=0;sp.vx=Math.abs(sp.vx)*bounce}
-        if(sp.x>maxX){sp.x=maxX;sp.vx=-Math.abs(sp.vx)*bounce}
+        if(sp.x<0){sp.x=0;sp.vx=bounce<.08?0:Math.abs(sp.vx)*bounce}
+        if(sp.x>maxX){sp.x=maxX;sp.vx=bounce<.08?0:-Math.abs(sp.vx)*bounce}
         if(sp.y>floor){
           sp.y=floor;
-          if(Math.abs(sp.vy)>.08)sp.vy=-Math.abs(sp.vy)*bounce;
+          if(Math.abs(sp.vy)>.08 && bounce>=.08)sp.vy=-Math.abs(sp.vy)*bounce;
           else sp.vy=0;
         }
         if(sp.y<0){sp.y=0;sp.vy=Math.abs(sp.vy)*bounce}
@@ -452,6 +464,7 @@ function renderPublicShimeji(){
       sp.el.style.setProperty('--shimeji-y',`${sp.y}px`);
       sp.el.style.setProperty('--shimeji-face',String(face));
     }
+    lastViewportH=viewportH;
     publicShimejiFrame=requestAnimationFrame(tick);
   };
   publicShimejiFrame=requestAnimationFrame(tick);
