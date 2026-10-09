@@ -6,6 +6,7 @@
   <title>꾸미기 · mint info</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="editor.css">
+  <link rel="stylesheet" href="fonts.css">
 </head>
 <body class="editor-body">
   <header class="editor-topbar">
@@ -155,10 +156,20 @@
               <label class="editor-field">폰트
                 <select id="fontFamily">
                   <option value="system-ui">기본</option>
-                  <option value="'Arial',sans-serif">Arial</option>
-                  <option value="'Georgia',serif">Georgia</option>
-                  <option value="'Courier New',monospace">Courier</option>
-                  <option value="'Times New Roman',serif">Times</option>
+                  <optgroup label="내 폰트">
+                    <option value="'Paperlogy', sans-serif">Paperlogy</option>
+                    <option value="'Jalnan2', sans-serif">잘난체2</option>
+                    <option value="'Puzzle Sans', sans-serif">Puzzle Sans</option>
+                    <option value="'Wonju', sans-serif">원주체</option>
+                    <option value="'PyeongChang Peace', sans-serif">평창평화체</option>
+                    <option value="'BM Jua', sans-serif">배민 주아체</option>
+                  </optgroup>
+                  <optgroup label="기본 폰트">
+                    <option value="'Arial',sans-serif">Arial</option>
+                    <option value="'Georgia',serif">Georgia</option>
+                    <option value="'Courier New',monospace">Courier</option>
+                    <option value="'Times New Roman',serif">Times</option>
+                  </optgroup>
                 </select>
               </label>
               <div class="two-inputs">
