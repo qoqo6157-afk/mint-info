@@ -3,43 +3,250 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>내 페이지 · mint info</title>
+  <title>꾸미기 · mint info</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="editor.css">
 </head>
-<body>
-  <header class="topbar">
+<body class="editor-body">
+  <header class="editor-topbar">
     <a href="index.html" class="brand">mint info</a>
-    <nav>
-      <a id="previewLink" href="#">공개 페이지</a>
-      <a href="admin.html">관리자</a>
-      <button id="logoutBtn" class="link-button">로그아웃</button>
-    </nav>
+    <div class="editor-top-actions">
+      <div class="device-switch" role="group" aria-label="미리보기 기기">
+        <button id="desktopModeBtn" class="mini-btn active" type="button">PC</button>
+        <button id="mobileModeBtn" class="mini-btn" type="button">MOBILE</button>
+      </div>
+      <button id="undoBtn" class="mini-btn" type="button" title="실행취소">↶</button>
+      <button id="redoBtn" class="mini-btn" type="button" title="다시실행">↷</button>
+      <span id="saveState" class="save-state">저장됨</span>
+      <button id="saveBtn" class="btn primary compact" type="button">저장</button>
+      <a id="previewLink" class="btn compact" href="#" target="_blank">공개 페이지</a>
+      <a class="mini-link" href="admin.html">관리자</a>
+      <button id="logoutBtn" class="mini-link button-link" type="button">로그아웃</button>
+    </div>
   </header>
 
-  <main class="shell wide-shell">
-    <section class="card">
-      <div class="eyebrow">MY PAGE</div>
-      <h1>프로필 편집</h1>
-      <p class="muted">프로필을 꾸미고, 아래에서 내 소개 사이트 주소 이름을 직접 정할 수 있습니다.</p>
+  <main class="editor-layout">
+    <aside class="editor-sidebar left-panel">
+      <div class="side-scroll">
+        <section class="panel-section">
+          <div class="section-title">ADD</div>
+          <div class="add-grid">
+            <button class="tool-card" data-add="text" type="button"><span>𝐓</span>텍스트</button>
+            <button class="tool-card" data-add="image" type="button"><span>▣</span>이미지</button>
+            <button class="tool-card" data-add="sticker" type="button"><span>✦</span>스티커</button>
+            <button class="tool-card" data-add="button" type="button"><span>↗</span>링크</button>
+            <button class="tool-card" data-add="shape" type="button"><span>▭</span>도형</button>
+          </div>
+          <input id="assetInput" type="file" accept="image/*,.gif" hidden>
+        </section>
 
-      <form id="profileForm" class="two-col">
-        <label>닉네임<input id="nickname" maxlength="30"></label>
-        <label>내 사이트 주소 이름
-          <input id="username" readonly>
-          <span class="field-help">가입할 때 정한 주소 이름입니다.</span>
-          <span id="urlPreview" class="url-preview"></span>
-        </label>
-        <label class="full">한줄 소개<textarea id="bio" rows="5" maxlength="500"></textarea></label>
-        <label>배경색<input id="bgColor" type="color" value="#fff3f8"></label>
-        <label>포인트색<input id="accentColor" type="color" value="#ff7bac"></label>
-        <div class="full"><button class="btn primary" type="submit">저장</button></div>
-      </form>
-      <p id="message" class="message"></p>
+        <section class="panel-section">
+          <div class="section-title">PROFILE</div>
+          <label class="editor-field">닉네임<input id="profileNickname" maxlength="30"></label>
+          <label class="editor-field">소개<textarea id="profileBio" rows="3" maxlength="500"></textarea></label>
+          <label class="editor-field">내 주소<input id="profileUsername" readonly></label>
+          <div id="publicUrl" class="tiny-url"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">BACKGROUND</div>
+          <label class="editor-field">배경 종류
+            <select id="bgType">
+              <option value="color">단색</option>
+              <option value="gradient">그라데이션</option>
+              <option value="image">이미지</option>
+            </select>
+          </label>
+          <div class="two-inputs">
+            <label class="editor-field">색상 1<input id="bgColor1" type="color"></label>
+            <label class="editor-field">색상 2<input id="bgColor2" type="color"></label>
+          </div>
+          <label class="editor-field">그라데이션 각도 <span id="bgAngleValue" class="field-value"></span>
+            <input id="bgAngle" type="range" min="0" max="360" step="1">
+          </label>
+          <button id="bgImageBtn" class="btn small-btn" type="button">배경 이미지 업로드</button>
+          <input id="bgImageInput" type="file" accept="image/*,.gif" hidden>
+          <label class="editor-field">배경 맞춤
+            <select id="bgFit">
+              <option value="cover">화면 채우기</option>
+              <option value="contain">전체 보기</option>
+              <option value="repeat">반복</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">BACKGROUND EFFECTS</div>
+          <details class="effect-box" open>
+            <summary><label><input id="snowEnabled" type="checkbox"> 눈 ❄</label></summary>
+            <label class="range-field">개수 <span id="snowCountV"></span><input id="snowCount" type="range" min="5" max="120"></label>
+            <label class="range-field">속도 <span id="snowSpeedV"></span><input id="snowSpeed" type="range" min="1" max="12" step=".5"></label>
+            <label class="range-field">크기 <span id="snowSizeV"></span><input id="snowSize" type="range" min="3" max="24"></label>
+            <label class="range-field">흔들림 <span id="snowDriftV"></span><input id="snowDrift" type="range" min="0" max="80"></label>
+          </details>
+
+          <details class="effect-box">
+            <summary><label><input id="petalEnabled" type="checkbox"> 꽃잎 🌸</label></summary>
+            <label class="range-field">개수 <span id="petalCountV"></span><input id="petalCount" type="range" min="3" max="80"></label>
+            <label class="range-field">속도 <span id="petalSpeedV"></span><input id="petalSpeed" type="range" min="1" max="14" step=".5"></label>
+            <label class="range-field">크기 <span id="petalSizeV"></span><input id="petalSize" type="range" min="5" max="30"></label>
+            <label class="range-field">흩날림 <span id="petalDriftV"></span><input id="petalDrift" type="range" min="0" max="120"></label>
+            <label class="range-field">회전 <span id="petalSpinV"></span><input id="petalSpin" type="range" min="0" max="1080" step="30"></label>
+          </details>
+
+          <details class="effect-box">
+            <summary><label><input id="rainEnabled" type="checkbox"> 비 🌧</label></summary>
+            <label class="range-field">개수 <span id="rainCountV"></span><input id="rainCount" type="range" min="10" max="160"></label>
+            <label class="range-field">속도 <span id="rainSpeedV"></span><input id="rainSpeed" type="range" min=".5" max="5" step=".1"></label>
+            <label class="range-field">길이 <span id="rainLengthV"></span><input id="rainLength" type="range" min="8" max="60"></label>
+            <label class="range-field">기울기 <span id="rainAngleV"></span><input id="rainAngle" type="range" min="-35" max="35"></label>
+          </details>
+
+          <details class="effect-box">
+            <summary><label><input id="sparkleEnabled" type="checkbox"> 반짝이 ✦</label></summary>
+            <label class="range-field">동시 개수 <span id="sparkleCountV"></span><input id="sparkleCount" type="range" min="1" max="40"></label>
+            <label class="range-field">생성 간격 <span id="sparkleIntervalV"></span><input id="sparkleInterval" type="range" min="100" max="3000" step="100"></label>
+            <label class="range-field">유지 시간 <span id="sparkleDurationV"></span><input id="sparkleDuration" type="range" min=".5" max="6" step=".1"></label>
+            <label class="range-field">크기 <span id="sparkleSizeV"></span><input id="sparkleSize" type="range" min="4" max="40"></label>
+          </details>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">LAYERS</div>
+          <div id="layerList" class="layer-list"></div>
+        </section>
+      </div>
+    </aside>
+
+    <section class="editor-workspace">
+      <div class="workspace-head">
+        <div>
+          <b id="modeLabel">PC 캔버스</b>
+          <span id="canvasSizeText" class="muted mini-text"></span>
+        </div>
+        <div class="zoom-box">ZOOM <input id="zoomRange" type="range" min="25" max="100" value="70"><span id="zoomText">70%</span></div>
+      </div>
+      <div id="stageViewport" class="stage-viewport">
+        <div id="stageScaler" class="stage-scaler">
+          <div id="pageCanvas" class="page-canvas">
+            <div id="fxLayer" class="fx-layer"></div>
+            <div id="elementsLayer" class="elements-layer"></div>
+          </div>
+        </div>
+      </div>
     </section>
+
+    <aside class="editor-sidebar right-panel">
+      <div class="side-scroll">
+        <section class="panel-section">
+          <div class="section-title">ELEMENT</div>
+          <div id="noSelection" class="empty-inspector">캔버스에서 요소를 선택해 주세요.</div>
+          <div id="inspector" hidden>
+            <div class="inspector-actions">
+              <button id="duplicateBtn" class="mini-btn" type="button">복제</button>
+              <button id="lockBtn" class="mini-btn" type="button">잠금</button>
+              <button id="hideBtn" class="mini-btn" type="button">숨김</button>
+              <button id="deleteBtn" class="mini-btn danger" type="button">삭제</button>
+            </div>
+
+            <label class="editor-field">요소 이름<input id="elName"></label>
+            <div id="textControls">
+              <label class="editor-field">내용<textarea id="textValue" rows="4"></textarea></label>
+              <label class="editor-field">폰트
+                <select id="fontFamily">
+                  <option value="system-ui">기본</option>
+                  <option value="'Arial',sans-serif">Arial</option>
+                  <option value="'Georgia',serif">Georgia</option>
+                  <option value="'Courier New',monospace">Courier</option>
+                  <option value="'Times New Roman',serif">Times</option>
+                </select>
+              </label>
+              <div class="two-inputs">
+                <label class="editor-field">크기<input id="fontSize" type="number" min="8" max="160"></label>
+                <label class="editor-field">굵기
+                  <select id="fontWeight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select>
+                </label>
+              </div>
+              <div class="two-inputs">
+                <label class="editor-field">글자색<input id="textColor" type="color"></label>
+                <label class="editor-field">배경색<input id="textBgColor" type="color"></label>
+              </div>
+              <label class="editor-field">정렬
+                <select id="textAlign"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select>
+              </label>
+              <div class="two-inputs">
+                <label class="editor-field">자간<input id="letterSpacing" type="number" min="-5" max="30" step=".5"></label>
+                <label class="editor-field">줄간격<input id="lineHeight" type="number" min=".7" max="3" step=".1"></label>
+              </div>
+              <label class="check-field"><input id="textShadow" type="checkbox"> 글자 그림자</label>
+              <label class="editor-field">외곽선<input id="textStroke" type="number" min="0" max="6" step=".5"></label>
+            </div>
+
+            <div id="buttonControls" hidden>
+              <label class="editor-field">버튼 문구<input id="buttonText"></label>
+              <label class="editor-field">링크<input id="buttonUrl" type="url" placeholder="https://..."></label>
+              <div class="two-inputs">
+                <label class="editor-field">버튼색<input id="buttonBg" type="color"></label>
+                <label class="editor-field">글자색<input id="buttonColor" type="color"></label>
+              </div>
+            </div>
+
+            <div id="shapeControls" hidden>
+              <div class="two-inputs">
+                <label class="editor-field">채우기<input id="shapeFill" type="color"></label>
+                <label class="editor-field">테두리<input id="shapeBorder" type="color"></label>
+              </div>
+              <label class="editor-field">테두리 두께<input id="shapeBorderWidth" type="number" min="0" max="20"></label>
+            </div>
+
+            <div id="imageControls" hidden>
+              <label class="editor-field">이미지 맞춤<select id="imageFit"><option value="cover">채우기</option><option value="contain">전체 보기</option></select></label>
+            </div>
+
+            <div class="section-subtitle">POSITION & STYLE</div>
+            <div class="four-inputs">
+              <label class="editor-field">X<input id="elX" type="number"></label>
+              <label class="editor-field">Y<input id="elY" type="number"></label>
+              <label class="editor-field">W<input id="elW" type="number" min="20"></label>
+              <label class="editor-field">H<input id="elH" type="number" min="20"></label>
+            </div>
+            <label class="range-field">회전 <span id="rotationV"></span><input id="rotation" type="range" min="-180" max="180"></label>
+            <label class="range-field">투명도 <span id="opacityV"></span><input id="opacity" type="range" min="0" max="1" step=".05"></label>
+            <label class="range-field">둥글기 <span id="radiusV"></span><input id="borderRadius" type="range" min="0" max="100"></label>
+            <label class="check-field"><input id="boxShadow" type="checkbox"> 박스 그림자</label>
+            <div class="z-actions">
+              <button id="sendBackBtn" class="mini-btn" type="button">맨 뒤로</button>
+              <button id="bringFrontBtn" class="mini-btn" type="button">맨 앞으로</button>
+            </div>
+
+            <div class="section-subtitle">ANIMATION</div>
+            <label class="editor-field">효과
+              <select id="animType">
+                <option value="none">없음</option>
+                <option value="float">둥실둥실</option>
+                <option value="sway">좌우 흔들림</option>
+                <option value="bounce">통통 튀기</option>
+                <option value="pulse">펄스</option>
+                <option value="glow">반짝임</option>
+                <option value="spin">회전</option>
+                <option value="fade">페이드</option>
+              </select>
+            </label>
+            <label class="range-field">속도 <span id="animSpeedV"></span><input id="animSpeed" type="range" min=".5" max="10" step=".1"></label>
+            <label class="range-field">강도 <span id="animIntensityV"></span><input id="animIntensity" type="range" min="1" max="60"></label>
+            <label class="range-field">지연 <span id="animDelayV"></span><input id="animDelay" type="range" min="0" max="5" step=".1"></label>
+            <label class="check-field"><input id="animLoop" type="checkbox"> 반복</label>
+          </div>
+        </section>
+      </div>
+    </aside>
   </main>
+
+  <div id="toast" class="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="dashboard.js"></script>
+  <script src="effects.js"></script>
+  <script src="editor.js"></script>
 </body>
 </html>

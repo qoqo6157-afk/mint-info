@@ -2,23 +2,23 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>profile · mint info</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>mint info</title>
+  <link rel="stylesheet" href="public.css">
 </head>
-<body id="publicBody">
-  <main class="shell">
-    <section id="profileCard" class="card public-card">
-      <div class="avatar">♥</div>
-      <h1 id="nickname">loading...</h1>
-      <div id="username" class="handle"></div>
-      <p id="bio" class="public-bio"></p>
-      <a class="btn" href="index.html">mint info</a>
-    </section>
-  </main>
-
+<body class="public-site-body">
+  <div id="loading" class="public-loading">페이지를 불러오는 중...</div>
+  <div id="publicWrap" class="public-stage-wrap" hidden>
+    <div id="publicScaler" class="public-stage-scaler">
+      <div id="publicCanvas" class="public-page-canvas">
+        <div id="fxLayer" class="fx-layer"></div>
+        <div id="elementsLayer" class="elements-layer"></div>
+      </div>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="profile.js"></script>
+  <script src="effects.js"></script>
+  <script src="public.js"></script>
 </body>
 </html>
