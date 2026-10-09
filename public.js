@@ -165,7 +165,40 @@ function publicWidgetMarkup(el){
 }
 
 function content(el){const w=document.createElement('div');w.className='canvas-content';if(el.type==='text'){const ts=publicResponsive(el);w.classList.add('text-content');w.textContent=el.props.text||'';Object.assign(w.style,{fontFamily:publicFont(el.props.fontFamily),fontSize:`${ts.fontSize}px`,fontWeight:el.props.fontWeight||'800',color:el.props.color||'#111',background:'transparent',textAlign:el.props.align||'left',letterSpacing:`${ts.letterSpacing}px`,lineHeight:String(ts.lineHeight),display:'flex',alignItems:'center',padding:'8px',textShadow:el.props.textShadow?'0 3px 10px rgba(0,0,0,.22)':'none',WebkitTextStroke:`${ts.textStroke}px rgba(0,0,0,.75)`})}else if(el.type==='image'||el.type==='sticker'){const img=document.createElement('img');img.src=el.props.src||'';img.alt='';img.style.objectFit=el.props.fit||'cover';const ip=publicImagePosition(el);img.style.objectPosition=`${ip.x}% ${ip.y}%`;w.appendChild(img)}else if(el.type==='button'){const a=document.createElement('a');a.className='button-content';a.textContent=el.props.text||'LINK';a.href=el.props.url||'#';a.target='_blank';a.rel='noopener noreferrer';a.style.background=el.props.bg||'#56cfb8';a.style.color=el.props.color||'#fff';w.appendChild(a)}else if(el.type==='shape'){const d=document.createElement('div');d.className='shape-content';d.style.background=el.props.fill||'#fff';d.style.border=`${el.props.borderWidth||0}px solid ${el.props.border||'#000'}`;w.appendChild(d)}else if(el.type==='widget'){w.classList.add('widget-content');if(el.props?.kind==='messenger')w.style.setProperty('--messenger-scale',String(publicMessengerScale(el)));w.innerHTML=publicWidgetMarkup(el)}w.style.borderRadius=`${el.borderRadius||0}px`;if(el.boxShadow)w.style.boxShadow='0 12px 30px rgba(25,70,62,.18)';return w}
-function applyBackground(c){const b=c.background||{};canvas.style.backgroundColor=b.color1||'#fff';canvas.style.backgroundImage='none';canvas.style.backgroundPosition='center';if(b.type==='gradient')canvas.style.backgroundImage=`linear-gradient(${b.angle||0}deg, ${b.color1}, ${b.color2})`;if(b.type==='image'&&b.image){canvas.style.backgroundImage=`url("${b.image}")`;if(b.fit==='repeat'){canvas.style.backgroundRepeat='repeat';canvas.style.backgroundSize='auto'}else{canvas.style.backgroundRepeat='no-repeat';canvas.style.backgroundSize=b.fit||'cover'}}}
+function applyBackground(c){
+  const b=c.background||{};
+  const targets=[canvas,document.body,document.documentElement,$('#publicWrap')].filter(Boolean);
+
+  targets.forEach(t=>{
+    t.style.backgroundColor=b.color1||'#fff';
+    t.style.backgroundImage='none';
+    t.style.backgroundPosition='center top';
+    t.style.backgroundRepeat='no-repeat';
+    t.style.backgroundSize='cover';
+  });
+
+  if(b.type==='gradient'){
+    const bg=`linear-gradient(${b.angle||0}deg, ${b.color1||'#fff'}, ${b.color2||'#fff'})`;
+    targets.forEach(t=>{t.style.backgroundImage=bg;});
+  }
+
+  if(b.type==='image'&&b.image){
+    const bg=`url("${b.image}")`;
+    targets.forEach(t=>{
+      t.style.backgroundImage=bg;
+      if(b.fit==='repeat'){
+        t.style.backgroundRepeat='repeat';
+        t.style.backgroundSize='auto';
+      }else{
+        t.style.backgroundRepeat='no-repeat';
+        t.style.backgroundSize=b.fit||'cover';
+      }
+    });
+  }
+
+  // Keep the actual page canvas exactly aligned to its own coordinate system.
+  canvas.style.backgroundPosition='center';
+}
 
 
 /* Image protection: best-effort deterrence for the public page.
