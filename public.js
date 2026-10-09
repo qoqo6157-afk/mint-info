@@ -103,7 +103,9 @@ function publicImagePosition(el,targetMode=mode){
 }
 function publicMessengerScale(el,targetMode=mode){
   const r=publicResponsive(el,targetMode);
-  return Number(r.messengerScale??(targetMode==='mobile'?.82:1));
+  const legacyKey=targetMode==='mobile'?'messengerScaleMobile':'messengerScaleDesktop';
+  const value=Number(r.messengerScale??el.props?.[legacyKey]??(targetMode==='mobile'?.82:1));
+  return Number.isFinite(value)?value:(targetMode==='mobile'?.82:1);
 }
 function applyAnim(node,el){const a=el.animation||{};node.style.setProperty('--anim-speed',`${a.speed||3}s`);node.style.setProperty('--anim-delay',`${a.delay||0}s`);node.style.setProperty('--anim-intensity',`${a.intensity||12}px`);node.style.setProperty('--anim-intensity-num',String((a.intensity||12)/100));node.style.setProperty('--anim-iteration',a.loop===false?'1':'infinite')}
 
@@ -133,7 +135,8 @@ function publicWidgetAutoScale(el,targetMode=mode){
 function widgetShell(el,inner){
   const p=el.props||{};
   const s=publicWidgetAutoScale(el);
-  return `<div class="public-widget" style="background:${escapePublic(p.bg||'#fff')};color:${escapePublic(p.color||'#28423d')};--widget-accent:${escapePublic(p.accent||'#57cdb7')}"><div class="widget-auto-scale" style="transform:scale(${s});width:${100/s}%;height:${100/s}%">${inner}</div></div>`;
+  const messengerScale=p.kind==='messenger'?publicMessengerScale(el):1;
+  return `<div class="public-widget" style="background:${escapePublic(p.bg||'#fff')};color:${escapePublic(p.color||'#28423d')};--widget-accent:${escapePublic(p.accent||'#57cdb7')};--messenger-scale:${messengerScale}"><div class="widget-auto-scale" style="transform:scale(${s});width:${100/s}%;height:${100/s}%">${inner}</div></div>`;
 }
 function publicWidgetMarkup(el){
   const p=el.props||{}, title=escapePublic(p.title||'');
@@ -153,7 +156,8 @@ function publicWidgetMarkup(el){
   }
   if(p.kind==='messenger'){
     const msgs=p.messages||[];
-    return widgetShell(el,`${head}<div class="messenger-preview">${msgs.map(m=>`<div class="msg-row ${m.side==='right'?'right':'left'}">${m.side==='left'?`<div class="msg-avatar">${m.profile?`<img src="${escapePublic(m.profile)}">`:'●'}</div>`:''}<div class="msg-stack"><small>${escapePublic(m.name||'')}</small><div class="msg-bubble">${escapePublic(m.text||'')}${m.image?`<img src="${escapePublic(m.image)}">`:''}</div></div>${m.side==='right'?`<div class="msg-avatar">${m.profile?`<img src="${escapePublic(m.profile)}">`:'●'}</div>`:''}</div>`).join('')}</div>`);
+    const ms=publicMessengerScale(el);
+    return widgetShell(el,`${head}<div class="messenger-preview" style="--messenger-scale:${ms}">${msgs.map(m=>`<div class="msg-row ${m.side==='right'?'right':'left'}">${m.side==='left'?`<div class="msg-avatar">${m.profile?`<img src="${escapePublic(m.profile)}">`:'●'}</div>`:''}<div class="msg-stack"><small>${escapePublic(m.name||'')}</small><div class="msg-bubble">${escapePublic(m.text||'')}${m.image?`<img src="${escapePublic(m.image)}">`:''}</div></div>${m.side==='right'?`<div class="msg-avatar">${m.profile?`<img src="${escapePublic(m.profile)}">`:'●'}</div>`:''}</div>`).join('')}</div>`);
   }
   if(p.kind==='friends'){
     return widgetShell(el,`${head}<div class="friends-preview">${(p.items||[]).map(it=>`<a class="friend-card" href="${escapePublic(it.url||'#')}" target="_blank" rel="noopener noreferrer">${it.image?`<img src="${escapePublic(it.image)}">`:'<div class="friend-noimg"></div>'}<span>${escapePublic(it.label||it.username||'FRIEND')}</span></a>`).join('')}</div>`);
