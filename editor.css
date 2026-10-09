@@ -41,3 +41,141 @@
   border-color:#efc7cf !important;
   background:#fff !important;
 }
+
+/* V3: true centered canvas, including zoom */
+.stage-viewport{
+  flex:1;
+  min-width:0;
+  overflow:auto;
+  padding:40px;
+  display:block;
+  position:relative;
+}
+.stage-scaler{
+  position:relative;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  transform:none !important;
+}
+.page-canvas{
+  transform-origin:top left;
+}
+
+/* V3 background effects */
+.fx-layer{
+  overflow:hidden;
+  pointer-events:none;
+  z-index:9999;
+}
+.fx-snow,.fx-petal,.fx-rain,.fx-sparkle{
+  position:absolute;
+  pointer-events:none;
+  will-change:transform,opacity;
+}
+.fx-snow{
+  top:-36px;
+  color:#dff8ff;
+  text-shadow:
+    0 0 2px rgba(80,130,160,.95),
+    0 0 8px rgba(255,255,255,.95);
+  animation:mintSnowFall linear infinite;
+}
+@keyframes mintSnowFall{
+  0%{transform:translate3d(0,0,0) rotate(0deg)}
+  100%{transform:translate3d(var(--drift),var(--fall),0) rotate(320deg)}
+}
+.fx-petal{
+  top:-34px;
+  background:linear-gradient(135deg,#ffd6e7 0%,#ff9fc6 55%,#ff78af 100%);
+  border-radius:75% 25% 70% 30%;
+  box-shadow:0 0 4px rgba(255,123,173,.22);
+  animation:mintPetalFall linear infinite;
+}
+@keyframes mintPetalFall{
+  0%{transform:translate3d(0,0,0) rotate(0deg)}
+  50%{transform:translate3d(calc(var(--drift) * .55),calc(var(--fall) * .5),0) rotate(calc(var(--spin) * .45))}
+  100%{transform:translate3d(var(--drift),var(--fall),0) rotate(var(--spin))}
+}
+.fx-rain{
+  top:-70px;
+  width:2px;
+  transform-origin:center top;
+  background:linear-gradient(to bottom,transparent,rgba(93,156,190,.82));
+  animation:mintRainFall linear infinite;
+}
+@keyframes mintRainFall{
+  0%{translate:0 0}
+  100%{translate:var(--rain-x) var(--fall)}
+}
+.fx-sparkle{
+  color:white;
+  text-shadow:0 0 5px rgba(53,123,112,.6),0 0 12px rgba(255,255,255,.98);
+  animation:mintSparkle ease-in-out forwards;
+}
+@keyframes mintSparkle{
+  0%{opacity:0;transform:scale(.25) rotate(0deg)}
+  35%{opacity:1;transform:scale(1.15) rotate(20deg)}
+  70%{opacity:.85;transform:scale(.9) rotate(-8deg)}
+  100%{opacity:0;transform:scale(.4) rotate(35deg)}
+}
+
+/* V4: background effect cards are always open */
+.effect-box{
+  display:block;
+  border:1px solid #d8eee9;
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:8px;
+  background:#fbfffe;
+}
+.effect-summary{
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+.effect-summary label{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin:0;
+}
+.effect-summary input{width:auto}
+
+/* V4: smooth dragging */
+.canvas-element{
+  will-change:left,top,width,height,transform;
+  contain:layout paint style;
+}
+.canvas-element.dragging,
+.canvas-element.resizing{
+  transition:none!important;
+}
+.elements-layer{
+  contain:layout paint;
+}
+
+/* V4: background-effect appearance only; motion is driven by JS Web Animations API */
+.fx-layer{overflow:hidden;pointer-events:none;z-index:9999}
+.fx-snow,.fx-petal,.fx-rain,.fx-sparkle{
+  position:absolute;
+  pointer-events:none;
+  will-change:transform,translate,opacity;
+}
+.fx-snow{
+  color:#ecfbff;
+  text-shadow:0 0 2px rgba(65,115,145,.85),0 0 8px rgba(255,255,255,.98);
+}
+.fx-petal{
+  background:linear-gradient(135deg,#ffd9e8 0%,#ff9fc6 58%,#ff72ac 100%);
+  border-radius:78% 22% 68% 32%;
+  box-shadow:0 0 3px rgba(255,115,166,.2);
+}
+.fx-rain{
+  width:2px;
+  transform-origin:center top;
+  background:linear-gradient(to bottom,transparent,rgba(86,151,189,.84));
+}
+.fx-sparkle{
+  color:#fff;
+  text-shadow:0 0 5px rgba(53,123,112,.62),0 0 12px rgba(255,255,255,.98);
+}

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>꾸미기 · mint info</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="editor.css">
-  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="editor.css?v=4">
+  <link rel="stylesheet" href="fonts.css?v=4">
 </head>
 <body class="editor-body">
   <header class="editor-topbar">
@@ -81,38 +81,38 @@
 
         <section class="panel-section">
           <div class="section-title">BACKGROUND EFFECTS</div>
-          <details class="effect-box" open>
-            <summary><label><input id="snowEnabled" type="checkbox"> 눈 ❄</label></summary>
+          <div class="effect-box">
+            <div class="effect-summary"><label><input id="snowEnabled" type="checkbox"> 눈 ❄</label></div>
             <label class="range-field">개수 <span id="snowCountV"></span><input id="snowCount" type="range" min="5" max="120"></label>
             <label class="range-field">속도 <span id="snowSpeedV"></span><input id="snowSpeed" type="range" min="1" max="12" step=".5"></label>
             <label class="range-field">크기 <span id="snowSizeV"></span><input id="snowSize" type="range" min="3" max="24"></label>
             <label class="range-field">흔들림 <span id="snowDriftV"></span><input id="snowDrift" type="range" min="0" max="80"></label>
-          </details>
+          </div>
 
-          <details class="effect-box">
-            <summary><label><input id="petalEnabled" type="checkbox"> 꽃잎 🌸</label></summary>
+          <div class="effect-box">
+            <div class="effect-summary"><label><input id="petalEnabled" type="checkbox"> 꽃잎 🌸</label></div>
             <label class="range-field">개수 <span id="petalCountV"></span><input id="petalCount" type="range" min="3" max="80"></label>
             <label class="range-field">속도 <span id="petalSpeedV"></span><input id="petalSpeed" type="range" min="1" max="14" step=".5"></label>
             <label class="range-field">크기 <span id="petalSizeV"></span><input id="petalSize" type="range" min="5" max="30"></label>
             <label class="range-field">흩날림 <span id="petalDriftV"></span><input id="petalDrift" type="range" min="0" max="120"></label>
             <label class="range-field">회전 <span id="petalSpinV"></span><input id="petalSpin" type="range" min="0" max="1080" step="30"></label>
-          </details>
+          </div>
 
-          <details class="effect-box">
-            <summary><label><input id="rainEnabled" type="checkbox"> 비 🌧</label></summary>
+          <div class="effect-box">
+            <div class="effect-summary"><label><input id="rainEnabled" type="checkbox"> 비 🌧</label></div>
             <label class="range-field">개수 <span id="rainCountV"></span><input id="rainCount" type="range" min="10" max="160"></label>
             <label class="range-field">속도 <span id="rainSpeedV"></span><input id="rainSpeed" type="range" min=".5" max="5" step=".1"></label>
             <label class="range-field">길이 <span id="rainLengthV"></span><input id="rainLength" type="range" min="8" max="60"></label>
             <label class="range-field">기울기 <span id="rainAngleV"></span><input id="rainAngle" type="range" min="-35" max="35"></label>
-          </details>
+          </div>
 
-          <details class="effect-box">
-            <summary><label><input id="sparkleEnabled" type="checkbox"> 반짝이 ✦</label></summary>
+          <div class="effect-box">
+            <div class="effect-summary"><label><input id="sparkleEnabled" type="checkbox"> 반짝이 ✦</label></div>
             <label class="range-field">동시 개수 <span id="sparkleCountV"></span><input id="sparkleCount" type="range" min="1" max="40"></label>
             <label class="range-field">생성 간격 <span id="sparkleIntervalV"></span><input id="sparkleInterval" type="range" min="100" max="3000" step="100"></label>
             <label class="range-field">유지 시간 <span id="sparkleDurationV"></span><input id="sparkleDuration" type="range" min=".5" max="6" step=".1"></label>
             <label class="range-field">크기 <span id="sparkleSizeV"></span><input id="sparkleSize" type="range" min="4" max="40"></label>
-          </details>
+          </div>
         </section>
 
         <section class="panel-section">
@@ -224,7 +224,6 @@
             <label class="range-field">회전 <span id="rotationV"></span><input id="rotation" type="range" min="-180" max="180"></label>
             <label class="range-field">투명도 <span id="opacityV"></span><input id="opacity" type="range" min="0" max="1" step=".05"></label>
             <label class="range-field">둥글기 <span id="radiusV"></span><input id="borderRadius" type="range" min="0" max="100"></label>
-            <label class="check-field"><input id="boxShadow" type="checkbox"> 박스 그림자</label>
             <div class="z-actions">
               <button id="sendBackBtn" class="mini-btn" type="button">맨 뒤로</button>
               <button id="bringFrontBtn" class="mini-btn" type="button">맨 앞으로</button>
@@ -257,7 +256,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="effects.js"></script>
-  <script src="editor.js"></script>
+  <script src="effects.js?v=4"></script>
+  <script src="editor.js?v=4"></script>
 </body>
 </html>

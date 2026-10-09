@@ -1,23 +1,20 @@
-mint info editor v2
+mint info EDITOR V4
 
-이번 수정:
-- 커스텀 폰트 적용 로직 수정
-- 텍스트 기본 흰색 박스 제거 (기존 저장 데이터의 흰 배경도 투명 처리)
-- 요소를 아래로 끌면 PC/MOBILE 캔버스 높이가 자동으로 계속 확장
-- 캔버스 아래쪽 드래그 시 작업영역 자동 스크롤
-- 배경 이미지 업로드 + 배경 이미지 제거 버튼
-- 기존 캔버스 중앙 정렬 유지
+이번 수정
+- 눈 효과: Web Animations API 방식으로 재작성
+- 꽃잎 효과: Web Animations API 방식으로 재작성
+- 비 / 반짝이도 같은 효과 엔진으로 통일
+- 배경 효과 4종 설정창을 접을 수 없게 하고 항상 전부 표시
+- 드래그/리사이즈를 requestAnimationFrame 기반으로 변경해 버벅임 감소
+- 드래그 중 우측 입력값을 매 프레임 갱신하지 않도록 변경
+- 캔버스 자동 확장 중 효과 전체를 계속 재생성하던 병목 제거
+- 커스텀 폰트 변경 시 폰트별 권장 굵기를 자동 적용
+- 공백/한글 파일명의 폰트 URL을 안전하게 인코딩
+- 박스 그림자 옵션 제거 + 기존 저장 데이터의 박스 그림자도 무시
 
-SQL:
-- 이번 수정은 SQL 실행 필요 없음.
+SQL 필요 없음.
 
-폰트:
-- 폰트 파일 자체는 이 ZIP에 포함하지 않습니다.
-- 기존에 가지고 있는 아래 원본 폰트 파일을 GitHub에서 index.html과 같은 위치에 유지해 주세요:
-  Paperlogy-5Medium.ttf
-  Paperlogy-3Light.ttf
-  Jalnan2.otf
-  Puzzle Sans.ttf
-  원주체 Regular.otf
-  PyeongChangPeace-Bold.otf
-  BMJUA_ttf.ttf
+중요: 폰트 바이너리는 이 ZIP에 포함되어 있지 않습니다.
+기존 원본 폰트 파일 7개는 GitHub에서 index.html과 같은 위치에 그대로 있어야 합니다.
+
+GitHub에 ZIP 파일 전체 덮어쓰기 후 Ctrl+F5 해주세요.

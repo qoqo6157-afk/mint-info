@@ -1,52 +1,53 @@
-/* Custom web fonts.
-   Keep the original font files in the same GitHub folder as this file. */
+/* mint info custom fonts - v4
+   Font binaries are NOT bundled in this ZIP.
+   Keep your original font files beside index.html on GitHub. */
 
 @font-face {
-  font-family: "Paperlogy";
-  src: url("./Paperlogy-3Light.ttf") format("truetype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
+  font-family:"Paperlogy";
+  src:url("./Paperlogy-3Light.ttf") format("truetype");
+  font-weight:300;
+  font-style:normal;
+  font-display:swap;
 }
 @font-face {
-  font-family: "Paperlogy";
-  src: url("./Paperlogy-5Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
+  font-family:"Paperlogy";
+  src:url("./Paperlogy-5Medium.ttf") format("truetype");
+  font-weight:500;
+  font-style:normal;
+  font-display:swap;
 }
 @font-face {
-  font-family: "Jalnan2";
-  src: url("./Jalnan2.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  font-family:"Jalnan2";
+  src:url("./Jalnan2.otf") format("opentype");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
 }
 @font-face {
-  font-family: "Puzzle Sans";
-  src: url("./Puzzle Sans.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  font-family:"Puzzle Sans";
+  src:url("./Puzzle%20Sans.ttf") format("truetype");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
 }
 @font-face {
-  font-family: "Wonju";
-  src: url("./원주체 Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  font-family:"Wonju";
+  src:url("./%EC%9B%90%EC%A3%BC%EC%B2%B4%20Regular.otf") format("opentype");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
 }
 @font-face {
-  font-family: "PyeongChang Peace";
-  src: url("./PyeongChangPeace-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
+  font-family:"PyeongChang Peace";
+  src:url("./PyeongChangPeace-Bold.otf") format("opentype");
+  font-weight:700;
+  font-style:normal;
+  font-display:swap;
 }
 @font-face {
-  font-family: "BM Jua";
-  src: url("./BMJUA_ttf.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  font-family:"BM Jua";
+  src:url("./BMJUA_ttf.ttf") format("truetype");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
 }

@@ -2,3 +2,23 @@ html,body{margin:0;min-height:100%;background:#eefcf8}.public-site-body{overflow
 .anim-float{animation:elFloat var(--anim-speed,3s) ease-in-out var(--anim-delay,0s) var(--anim-iteration,infinite)}@keyframes elFloat{50%{translate:0 calc(var(--anim-intensity,12px) * -1)}}.anim-sway{animation:elSway var(--anim-speed,3s) ease-in-out var(--anim-delay,0s) var(--anim-iteration,infinite)}@keyframes elSway{25%{translate:calc(var(--anim-intensity,12px) * -1) 0}75%{translate:var(--anim-intensity,12px) 0}}.anim-bounce{animation:elBounce var(--anim-speed,1.5s) ease-in-out var(--anim-delay,0s) var(--anim-iteration,infinite)}@keyframes elBounce{50%{translate:0 calc(var(--anim-intensity,18px) * -1)}}.anim-pulse{animation:elPulse var(--anim-speed,2s) ease-in-out var(--anim-delay,0s) var(--anim-iteration,infinite)}@keyframes elPulse{50%{scale:calc(1 + var(--anim-intensity-num,.08))}}.anim-glow{animation:elGlow var(--anim-speed,2s) ease-in-out var(--anim-delay,0s) var(--anim-iteration,infinite)}@keyframes elGlow{50%{filter:brightness(1.35) drop-shadow(0 0 var(--anim-intensity,12px) rgba(255,255,255,.9))}}.anim-spin{animation:elSpin var(--anim-speed,5s) linear var(--anim-delay,0s) var(--anim-iteration,infinite)}@keyframes elSpin{to{rotate:360deg}}.anim-fade{animation:elFade var(--anim-speed,2s) ease-in-out var(--anim-delay,0s) var(--anim-iteration,infinite)}@keyframes elFade{50%{opacity:.2}}
 
 .public-element .text-content{background:transparent!important}
+
+/* V3 public background effects */
+.fx-layer{overflow:hidden;pointer-events:none;z-index:9999}
+.fx-snow,.fx-petal,.fx-rain,.fx-sparkle{position:absolute;pointer-events:none;will-change:transform,opacity}
+.fx-snow{top:-36px;color:#dff8ff;text-shadow:0 0 2px rgba(80,130,160,.95),0 0 8px rgba(255,255,255,.95);animation:mintSnowFall linear infinite}
+.fx-petal{top:-34px;background:linear-gradient(135deg,#ffd6e7 0%,#ff9fc6 55%,#ff78af 100%);border-radius:75% 25% 70% 30%;box-shadow:0 0 4px rgba(255,123,173,.22);animation:mintPetalFall linear infinite}
+.fx-rain{top:-70px;width:2px;transform-origin:center top;background:linear-gradient(to bottom,transparent,rgba(93,156,190,.82));animation:mintRainFall linear infinite}
+.fx-sparkle{color:white;text-shadow:0 0 5px rgba(53,123,112,.6),0 0 12px rgba(255,255,255,.98);animation:mintSparkle ease-in-out forwards}
+@keyframes mintSnowFall{0%{transform:translate3d(0,0,0) rotate(0deg)}100%{transform:translate3d(var(--drift),var(--fall),0) rotate(320deg)}}
+@keyframes mintPetalFall{0%{transform:translate3d(0,0,0) rotate(0deg)}50%{transform:translate3d(calc(var(--drift) * .55),calc(var(--fall) * .5),0) rotate(calc(var(--spin) * .45))}100%{transform:translate3d(var(--drift),var(--fall),0) rotate(var(--spin))}}
+@keyframes mintRainFall{0%{translate:0 0}100%{translate:var(--rain-x) var(--fall)}}
+@keyframes mintSparkle{0%{opacity:0;transform:scale(.25) rotate(0deg)}35%{opacity:1;transform:scale(1.15) rotate(20deg)}70%{opacity:.85;transform:scale(.9) rotate(-8deg)}100%{opacity:0;transform:scale(.4) rotate(35deg)}}
+
+/* V4 effect appearance; animation is JS-driven */
+.fx-layer{overflow:hidden;pointer-events:none;z-index:9999}
+.fx-snow,.fx-petal,.fx-rain,.fx-sparkle{position:absolute;pointer-events:none;will-change:transform,translate,opacity}
+.fx-snow{color:#ecfbff;text-shadow:0 0 2px rgba(65,115,145,.85),0 0 8px rgba(255,255,255,.98)}
+.fx-petal{background:linear-gradient(135deg,#ffd9e8 0%,#ff9fc6 58%,#ff72ac 100%);border-radius:78% 22% 68% 32%;box-shadow:0 0 3px rgba(255,115,166,.2)}
+.fx-rain{width:2px;transform-origin:center top;background:linear-gradient(to bottom,transparent,rgba(86,151,189,.84))}
+.fx-sparkle{color:#fff;text-shadow:0 0 5px rgba(53,123,112,.62),0 0 12px rgba(255,255,255,.98)}
