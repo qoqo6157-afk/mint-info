@@ -287,3 +287,21 @@ details.effect-box[open] > summary{margin-bottom:8px}
 .image-position-panel{margin-top:12px;padding:10px;border:1px solid #d8ebe6;border-radius:12px;background:#fbfffe}
 .image-position-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-size:11px;font-weight:800;color:#355e56}.image-position-head small{font-size:10px;color:#79a59b;font-weight:700}
 .range-line{display:grid;grid-template-columns:58px 1fr 38px;align-items:center;gap:7px;margin:9px 0;font-size:11px}.range-line input{width:100%;min-width:0}.range-line b{text-align:right;font-size:10px;color:#52786f}
+
+
+/* All widgets scale their internal UI together with the widget box. */
+.widget-content{
+  overflow:hidden;
+}
+.widget-auto-scale{
+  transform-origin:top left;
+  box-sizing:border-box;
+  min-width:0;
+  min-height:0;
+}
+.public-widget{
+  overflow:hidden;
+}
+.widget-auto-scale > .preference-widget{
+  min-height:100%;
+}

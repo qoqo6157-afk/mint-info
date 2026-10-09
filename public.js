@@ -102,18 +102,38 @@ function publicImagePosition(el,targetMode=mode){
   return {x:Number(r.imagePosX??el.props?.imagePosX??50),y:Number(r.imagePosY??el.props?.imagePosY??50)};
 }
 function publicMessengerScale(el,targetMode=mode){
-  const r=publicResponsive(el,targetMode),l=el.layout?.[targetMode]||el.layout?.desktop||{w:520};
-  const manual=Number(r.messengerScale??(targetMode==='mobile'?.82:1));
-  const auto=Math.min(2.2,Math.max(.72,Number(l.w||520)/520));
-  return manual*auto;
+  const r=publicResponsive(el,targetMode);
+  return Number(r.messengerScale??(targetMode==='mobile'?.82:1));
 }
 function applyAnim(node,el){const a=el.animation||{};node.style.setProperty('--anim-speed',`${a.speed||3}s`);node.style.setProperty('--anim-delay',`${a.delay||0}s`);node.style.setProperty('--anim-intensity',`${a.intensity||12}px`);node.style.setProperty('--anim-intensity-num',String((a.intensity||12)/100));node.style.setProperty('--anim-iteration',a.loop===false?'1':'infinite')}
 
 function escapePublic(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function splitPublic(v){return String(v||'').split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean)}
+
+function publicWidgetBaseSize(el){
+  const kind=el?.props?.kind||'generic';
+  const sizes={
+    messenger:{w:520,h:520},
+    friends:{w:520,h:420},
+    preference:{w:500,h:220},
+    guestbook:{w:460,h:350},
+    dday:{w:380,h:220},
+    visits:{w:380,h:220},
+    likes:{w:380,h:220},
+    tags:{w:380,h:220}
+  };
+  return sizes[kind]||{w:380,h:220};
+}
+function publicWidgetAutoScale(el,targetMode=mode){
+  const b=publicWidgetBaseSize(el);
+  const l=el.layout?.[targetMode]||el.layout?.desktop||b;
+  const s=Math.sqrt(Math.max(1,Number(l.w||b.w))*Math.max(1,Number(l.h||b.h))/(b.w*b.h));
+  return Math.min(3.2,Math.max(.45,s));
+}
 function widgetShell(el,inner){
   const p=el.props||{};
-  return `<div class="public-widget" style="background:${escapePublic(p.bg||'#fff')};color:${escapePublic(p.color||'#28423d')};--widget-accent:${escapePublic(p.accent||'#57cdb7')}">${inner}</div>`;
+  const s=publicWidgetAutoScale(el);
+  return `<div class="public-widget" style="background:${escapePublic(p.bg||'#fff')};color:${escapePublic(p.color||'#28423d')};--widget-accent:${escapePublic(p.accent||'#57cdb7')}"><div class="widget-auto-scale" style="transform:scale(${s});width:${100/s}%;height:${100/s}%">${inner}</div></div>`;
 }
 function publicWidgetMarkup(el){
   const p=el.props||{}, title=escapePublic(p.title||'');

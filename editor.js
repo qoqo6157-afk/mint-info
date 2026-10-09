@@ -106,9 +106,40 @@ function messengerScaleOf(el,targetMode=mode){
   return Number(r.messengerScale??1);
 }
 function effectiveMessengerScale(el,targetMode=mode){
-  const l=el.layout?.[targetMode]||el.layout?.desktop||{w:520};
-  const auto=clamp(Number(l.w||520)/520,.72,2.2);
-  return messengerScaleOf(el,targetMode)*auto;
+  return messengerScaleOf(el,targetMode);
+}
+
+
+function widgetBaseSize(el){
+  const kind=el?.props?.kind||'generic';
+  const sizes={
+    messenger:{w:520,h:520},
+    friends:{w:520,h:420},
+    preference:{w:500,h:220},
+    guestbook:{w:460,h:350},
+    dday:{w:380,h:220},
+    visits:{w:380,h:220},
+    likes:{w:380,h:220},
+    tags:{w:380,h:220}
+  };
+  return sizes[kind]||{w:380,h:220};
+}
+function widgetAutoScale(el,targetMode=mode){
+  const l=el.layout?.[targetMode]||el.layout?.desktop||widgetBaseSize(el);
+  const b=widgetBaseSize(el);
+  // Geometric mean reacts naturally whether the user changes width, height, or both.
+  const areaScale=Math.sqrt(Math.max(1,Number(l.w||b.w))*Math.max(1,Number(l.h||b.h))/(b.w*b.h));
+  return clamp(areaScale,.45,3.2);
+}
+function wrapWidgetScaledContent(wrap,el,markup){
+  const s=widgetAutoScale(el);
+  const inner=document.createElement('div');
+  inner.className='widget-auto-scale';
+  inner.style.transform=`scale(${s})`;
+  inner.style.width=`${100/s}%`;
+  inner.style.height=`${100/s}%`;
+  inner.innerHTML=markup;
+  wrap.appendChild(inner);
 }
 
 const FONT_STACKS = {
@@ -434,7 +465,7 @@ function buildContent(el){
     wrap.style.color=el.props.color||'#28423d';
     wrap.style.setProperty('--widget-accent',el.props.accent||'#57cdb7');
     if(el.props.kind==='messenger')wrap.style.setProperty('--messenger-scale',String(effectiveMessengerScale(el)));
-    wrap.innerHTML=widgetPreviewMarkup(el);
+    wrapWidgetScaledContent(wrap,el,widgetPreviewMarkup(el));
   }
   wrap.style.borderRadius=`${el.borderRadius||0}px`;
   return wrap;
