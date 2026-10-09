@@ -304,83 +304,121 @@ function clearPublicShimeji(){
 function renderPublicShimeji(){
   clearPublicShimeji();
   const root=document.getElementById('publicShimejiLayer');
-  const s=site?.content?.effects?.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};
+  const s=site?.content?.effects?.shimeji||{enabled:false,images:[],size:76,speed:1,bounce:.65};
   if(!root||!s.enabled||!Array.isArray(s.images)||!s.images.length)return;
 
-  const count=Math.max(1,Math.min(12,Number(s.count||3)));
   const size=Math.max(28,Number(s.size||76));
   const walkSpeed=Math.max(.1,Number(s.speed||1));
   const bounce=Math.max(.15,Math.min(1,Number(s.bounce||.65)));
   const sprites=[];
 
-  for(let i=0;i<count;i++){
+  s.images.slice(0,12).forEach((url,i)=>{
     const el=document.createElement('img');
     el.className='public-shimeji';
-    el.src=s.images[i%s.images.length];
+    el.src=url;
     el.draggable=false;
     el.style.width=size+'px';
     el.style.height=size+'px';
+
     const sp={
       el,
       x:Math.random()*Math.max(0,innerWidth-size),
       y:Math.max(0,innerHeight-size),
       vx:(Math.random()>.5?1:-1)*(.035+Math.random()*.045)*walkSpeed,
       vy:0,
-      held:false,
       pointerId:null,
-      ox:0,oy:0,lastX:0,lastY:0,lastT:0,
-      squishUntil:0
+      pressX:0,pressY:0,
+      ox:0,oy:0,
+      lastX:0,lastY:0,lastT:0,
+      dragging:false
     };
     root.appendChild(el);
+
+    const boing=()=>{
+      el.classList.remove('boing');
+      void el.offsetWidth;
+      el.classList.add('boing');
+    };
 
     el.addEventListener('pointerdown',e=>{
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
-      sp.held=true;sp.pointerId=e.pointerId;
       const rect=el.getBoundingClientRect();
+      sp.pointerId=e.pointerId;
+      sp.pressX=e.clientX;sp.pressY=e.clientY;
       sp.ox=e.clientX-rect.left;sp.oy=e.clientY-rect.top;
       sp.lastX=e.clientX;sp.lastY=e.clientY;sp.lastT=performance.now();
-      sp.vx=0;sp.vy=0;
-      sp.squishUntil=performance.now()+230;
-      el.classList.remove('boing');
-      void el.offsetWidth;
-      el.classList.add('boing');
+      sp.dragging=false;
     });
+
     el.addEventListener('pointermove',e=>{
-      if(!sp.held||e.pointerId!==sp.pointerId)return;
+      if(e.pointerId!==sp.pointerId)return;
+      const dist=Math.hypot(e.clientX-sp.pressX,e.clientY-sp.pressY);
+      if(!sp.dragging && dist<9)return;
+
+      if(!sp.dragging){
+        sp.dragging=true;
+        sp.vx=0;sp.vy=0;
+        el.classList.add('held');
+      }
+
       const now=performance.now(),dt=Math.max(8,now-sp.lastT);
-      const nx=e.clientX-sp.ox,ny=e.clientY-sp.oy;
+      sp.x=e.clientX-sp.ox;
+      sp.y=e.clientY-sp.oy;
       sp.vx=(e.clientX-sp.lastX)/dt;
       sp.vy=(e.clientY-sp.lastY)/dt;
-      sp.x=nx;sp.y=ny;
       sp.lastX=e.clientX;sp.lastY=e.clientY;sp.lastT=now;
     });
+
     const release=e=>{
-      if(!sp.held)return;
-      sp.held=false;sp.pointerId=null;
-      sp.vx*=18;sp.vy*=18;
+      if(e.pointerId!==sp.pointerId)return;
+      if(sp.dragging){
+        // Only an actual drag becomes a throw.
+        sp.vx*=16;
+        sp.vy*=16;
+        el.classList.remove('held');
+      }else{
+        // A simple click/tap stays in place and only does the soft "boing".
+        boing();
+      }
+      sp.pointerId=null;
+      sp.dragging=false;
     };
     el.addEventListener('pointerup',release);
-    el.addEventListener('pointercancel',release);
+    el.addEventListener('pointercancel',e=>{
+      if(e.pointerId!==sp.pointerId)return;
+      el.classList.remove('held');
+      sp.pointerId=null;sp.dragging=false;
+    });
+
     sprites.push(sp);
-  }
+  });
 
   let last=performance.now();
   const tick=now=>{
     const dt=Math.min(32,now-last);last=now;
     const floor=Math.max(0,innerHeight-size);
     const maxX=Math.max(0,innerWidth-size);
+
     for(const sp of sprites){
-      if(!sp.held){
+      if(sp.pointerId===null || !sp.dragging){
         const onFloor=sp.y>=floor-.5;
         if(onFloor && Math.abs(sp.vy)<.04){
           sp.y=floor;sp.vy=0;
-          if(Math.abs(sp.vx)<.018)sp.vx=(Math.random()>.5?1:-1)*(.035+Math.random()*.045)*walkSpeed;
+          if(Math.abs(sp.vx)<.018){
+            sp.vx=(Math.random()>.5?1:-1)*(.035+Math.random()*.045)*walkSpeed;
+          }
+          // Keep normal walking speed from slowly dying after wall bounces.
+          const minWalk=.035*walkSpeed,maxWalk=.08*walkSpeed;
+          if(Math.abs(sp.vx)<minWalk)sp.vx=(sp.vx<0?-1:1)*minWalk;
+          if(Math.abs(sp.vx)>maxWalk && Math.abs(sp.vy)<.04)sp.vx=(sp.vx<0?-1:1)*maxWalk;
         }else{
           sp.vy+=0.0026*dt;
         }
+
         sp.x+=sp.vx*dt;
         sp.y+=sp.vy*dt;
+
         if(sp.x<0){sp.x=0;sp.vx=Math.abs(sp.vx)*bounce}
         if(sp.x>maxX){sp.x=maxX;sp.vx=-Math.abs(sp.vx)*bounce}
         if(sp.y>floor){
@@ -390,6 +428,7 @@ function renderPublicShimeji(){
         }
         if(sp.y<0){sp.y=0;sp.vy=Math.abs(sp.vy)*bounce}
       }
+
       const face=sp.vx<0?-1:1;
       sp.el.style.transform=`translate3d(${sp.x}px,${sp.y}px,0) scaleX(${face})`;
     }
@@ -397,7 +436,6 @@ function renderPublicShimeji(){
   };
   publicShimejiFrame=requestAnimationFrame(tick);
 }
-
 function render(){if(!site)return;const c=site.content;mode=innerWidth<=600?'mobile':'desktop';const size=c.canvas?.[mode]||{width:390,height:780};canvas.style.width=size.width+'px';canvas.style.height=size.height+'px';scaler.style.width=size.width+'px';scaler.style.height=size.height+'px';applyBackground(c);layer.innerHTML='';[...(c.elements||[])].sort((a,b)=>(a.z||0)-(b.z||0)).forEach(el=>{if(el.hidden)return;const l=el.layout?.[mode]||el.layout?.desktop;if(!l)return;const n=document.createElement('div');n.className=`public-element ${animClass(el)}`;Object.assign(n.style,{left:`${l.x}px`,top:`${l.y}px`,width:`${l.w}px`,height:`${l.h}px`,zIndex:String(el.z||1),opacity:String(el.opacity??1),transform:`rotate(${el.rotation||0}deg)`});applyAnim(n,el);n.appendChild(content(el));layer.appendChild(n)});MintEffects.render(fxLayer,c.effects||{});fit(size);hydrateWidgets();renderPublicShimeji()}
 function fit(size){const scale=Math.min(1,innerWidth/size.width);scaler.style.transform=`scale(${scale})`;wrap.style.height=(size.height*scale)+'px';}
 async function load(){const name=requestedName();if(!name){loading.textContent='프로필 주소가 없습니다.';return}const {data,error}=await db.rpc('get_public_site',{p_username:name});if(error){loading.textContent=`페이지를 불러오지 못했습니다: ${error.message}`;return}const row=Array.isArray(data)?data[0]:data;if(!row){loading.textContent='공개된 페이지를 찾을 수 없습니다.';return}site=row;document.title=`${row.nickname} · mint info`;loading.hidden=true;wrap.hidden=false;render()}

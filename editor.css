@@ -390,3 +390,13 @@ details.effect-box[open] > summary{margin-bottom:8px}
 }
 .layer-row.drop-before::before{top:-5px}
 .layer-row.drop-after::after{bottom:-5px}
+
+
+/* SHIMEJI CHARACTER CARDS V3 */
+.shimeji-asset-list{display:grid;gap:8px;margin:8px 0}
+.shimeji-character-card{display:grid;grid-template-columns:54px 1fr;grid-template-rows:auto auto;gap:6px 9px;align-items:center;padding:8px;border:1px solid #d7ebe6;border-radius:12px;background:#fbfffe}
+.shimeji-character-card>img{grid-row:1/3;width:54px;height:54px;object-fit:contain;border-radius:8px;background:repeating-conic-gradient(#eef6f4 0 25%,#fff 0 50%) 50%/10px 10px}
+.shimeji-character-title{font-size:11px;font-weight:900;color:#355e56}
+.shimeji-character-actions{display:flex;gap:5px}
+.shimeji-character-actions button{flex:1;border:1px solid #cde4df;background:#fff;border-radius:8px;padding:5px 6px;font-size:10px;cursor:pointer}
+.shimeji-character-actions button:last-child{color:#c84e63}

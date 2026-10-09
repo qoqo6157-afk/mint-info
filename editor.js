@@ -786,21 +786,25 @@ function renderShimejiPreview(){
   stopShimejiPreview();
   const s=config.effects?.shimeji;
   if(!shimejiPreviewLayer || !s?.enabled || !Array.isArray(s.images) || !s.images.length) return;
-  const count=Math.max(1,Math.min(12,Number(s.count||3)));
   const size=Math.max(24,Number(s.size||76));
   const speed=Math.max(.1,Number(s.speed||1));
   const sprites=[];
-  for(let i=0;i<count;i++){
+  s.images.slice(0,12).forEach((url,i)=>{
     const img=document.createElement('img');
     img.className='shimeji-preview-sprite';
-    img.src=s.images[i%s.images.length];
-    img.style.width=size+'px';img.style.height=size+'px';
+    img.src=url;
+    img.style.width=size+'px';
+    img.style.height=size+'px';
     const maxX=Math.max(0,(config.canvas?.[mode]?.width||390)-size);
-    const sprite={el:img,x:Math.random()*maxX,vx:(Math.random()>.5?1:-1)*(.3+Math.random()*.6)*speed};
+    const sprite={
+      el:img,
+      x:Math.random()*maxX,
+      vx:(Math.random()>.5?1:-1)*(.035+Math.random()*.045)*speed
+    };
     img.style.transform=`translate(${sprite.x}px,0) scaleX(${sprite.vx<0?-1:1})`;
     shimejiPreviewLayer.appendChild(img);
     sprites.push(sprite);
-  }
+  });
   let last=performance.now();
   const tick=now=>{
     const dt=Math.min(32,now-last);last=now;
@@ -815,15 +819,44 @@ function renderShimejiPreview(){
   };
   shimejiPreviewAnim=requestAnimationFrame(tick);
 }
+function replaceShimejiImage(index){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='image/png,.png';
+  input.onchange=async()=>{
+    const f=input.files?.[0];
+    if(!f)return;
+    if(!(f.type==='image/png'||/\.png$/i.test(f.name||''))){toast('시메지는 PNG 파일만 가능해요.',true);return;}
+    try{
+      const url=await uploadAsset(f);
+      snapshot();
+      config.effects.shimeji.images[index]=url;
+      renderShimejiAssets();renderShimejiPreview();markDirty();
+      toast(`시메지 ${index+1} 사진을 바꿨어요`);
+    }catch(err){toast(err.message,true)}
+  };
+  input.click();
+}
 function renderShimejiAssets(){
   const box=$('#shimejiAssetList');if(!box)return;
   const arr=config.effects?.shimeji?.images||[];
   box.innerHTML='';
   arr.forEach((url,i)=>{
-    const item=document.createElement('div');item.className='shimeji-asset-item';
-    item.innerHTML=`<img src="${escapeHtml(url)}" alt=""><button type="button" aria-label="삭제">×</button>`;
-    item.querySelector('button').onclick=()=>{
-      snapshot();config.effects.shimeji.images.splice(i,1);renderShimejiAssets();renderShimejiPreview();markDirty();
+    const item=document.createElement('div');
+    item.className='shimeji-character-card';
+    item.innerHTML=`
+      <div class="shimeji-character-title">시메지 ${i+1}</div>
+      <img src="${escapeHtml(url)}" alt="">
+      <div class="shimeji-character-actions">
+        <button type="button" data-replace>사진 바꾸기</button>
+        <button type="button" data-delete>삭제</button>
+      </div>`;
+    item.querySelector('[data-replace]').onclick=()=>replaceShimejiImage(i);
+    item.querySelector('[data-delete]').onclick=()=>{
+      snapshot();
+      config.effects.shimeji.images.splice(i,1);
+      if(!config.effects.shimeji.images.length)config.effects.shimeji.enabled=false;
+      syncPageControls();renderShimejiAssets();renderShimejiPreview();markDirty();
     };
     box.appendChild(item);
   });
@@ -1216,7 +1249,7 @@ function bindInspector(){
 function syncPageControls(){
   const b=config.background;$('#bgType').value=b.type;$('#bgColor1').value=b.color1;$('#bgColor2').value=b.color2;$('#bgAngle').value=b.angle;$('#bgAngleValue').textContent=`${b.angle}°`;$('#bgFit').value=b.fit||'cover';
   const e=config.effects;
-  const defs={snow:['enabled','count','speed','size','drift'],petal:['enabled','count','speed','size','drift','spin'],rain:['enabled','count','speed','length','angle'],sparkle:['enabled','count','interval','duration','size'],shimeji:['enabled','count','size','speed','bounce']};
+  const defs={snow:['enabled','count','speed','size','drift'],petal:['enabled','count','speed','size','drift','spin'],rain:['enabled','count','speed','length','angle'],sparkle:['enabled','count','interval','duration','size'],shimeji:['enabled','size','speed','bounce']};
   Object.entries(defs).forEach(([k,keys])=>keys.forEach(prop=>{const id=k+prop[0].toUpperCase()+prop.slice(1);const input=$('#'+id);if(!input)return;if(input.type==='checkbox')input.checked=!!e[k][prop];else input.value=e[k][prop];const v=$('#'+id+'V');if(v)v.textContent=e[k][prop];}));
   renderShimejiAssets();
 }
@@ -1225,24 +1258,25 @@ function openEffectPanels(){}
 
 function bindPageControls(){
   ['bgType','bgColor1','bgColor2','bgAngle','bgFit'].forEach(id=>$('#'+id).addEventListener('input',()=>{snapshot();const b=config.background;if(id==='bgType')b.type=$('#bgType').value;if(id==='bgColor1')b.color1=$('#bgColor1').value;if(id==='bgColor2')b.color2=$('#bgColor2').value;if(id==='bgAngle')b.angle=+$('#bgAngle').value;if(id==='bgFit')b.fit=$('#bgFit').value;applyBackground();syncPageControls();markDirty()}));
-  const defs={snow:['Enabled','Count','Speed','Size','Drift'],petal:['Enabled','Count','Speed','Size','Drift','Spin'],rain:['Enabled','Count','Speed','Length','Angle'],sparkle:['Enabled','Count','Interval','Duration','Size'],shimeji:['Enabled','Count','Size','Speed','Bounce']};
+  const defs={snow:['Enabled','Count','Speed','Size','Drift'],petal:['Enabled','Count','Speed','Size','Drift','Spin'],rain:['Enabled','Count','Speed','Length','Angle'],sparkle:['Enabled','Count','Interval','Duration','Size'],shimeji:['Enabled','Size','Speed','Bounce']};
   Object.entries(defs).forEach(([k,props])=>props.forEach(cap=>{const id=k+cap;$('#'+id).addEventListener('input',()=>{snapshot();const prop=cap[0].toLowerCase()+cap.slice(1);const inp=$('#'+id);config.effects=config.effects||{};config.effects[k]=config.effects[k]||clone(DEFAULT_CONFIG.effects[k]||{});config.effects[k][prop]=inp.type==='checkbox'?inp.checked:+inp.value;syncPageControls();renderEffects();markDirty()})}));
   $('#shimejiUploadBtn').onclick=()=>$('#shimejiInput').click();
   $('#shimejiClearBtn').onclick=()=>{snapshot();config.effects=config.effects||{};config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};config.effects.shimeji.images=[];renderShimejiAssets();renderShimejiPreview();markDirty();toast('시메지 PNG를 모두 제거했어요')};
   $('#shimejiInput').onchange=async e=>{
-    const files=[...(e.target.files||[])];
-    if(!files.length)return;
+    const f=e.target.files?.[0];
+    if(!f)return;
+    if(!(f.type==='image/png'||/\.png$/i.test(f.name||''))){toast('시메지는 PNG 파일만 업로드할 수 있어요.',true);e.target.value='';return;}
     try{
-      const valid=files.filter(f=>f.type==='image/png'||/\.png$/i.test(f.name||''));
-      if(valid.length!==files.length)toast('시메지는 PNG 파일만 업로드할 수 있어요.',true);
       config.effects=config.effects||{};
       config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};
       if(!Array.isArray(config.effects.shimeji.images))config.effects.shimeji.images=[];
-      for(const f of valid){
-        const url=await uploadAsset(f);
-        config.effects.shimeji.images.push(url);
-      }
-      if(valid.length){snapshot();config.effects.shimeji.enabled=true;syncPageControls();renderEffects();markDirty();toast('시메지 PNG 추가 완료')}
+      if(config.effects.shimeji.images.length>=12){toast('시메지는 최대 12마리까지 추가할 수 있어요.',true);e.target.value='';return;}
+      const url=await uploadAsset(f);
+      snapshot();
+      config.effects.shimeji.images.push(url);
+      config.effects.shimeji.enabled=true;
+      syncPageControls();renderEffects();markDirty();
+      toast(`시메지 ${config.effects.shimeji.images.length} 추가 완료`);
     }catch(err){toast(err.message,true)}
     e.target.value='';
   };

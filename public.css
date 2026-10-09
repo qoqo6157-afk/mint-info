@@ -127,3 +127,17 @@ body.public-site-body,
 .public-shimeji:active{cursor:grabbing}
 .public-shimeji.boing{animation:shimejiBoing .28s cubic-bezier(.2,.9,.2,1)}
 @keyframes shimejiBoing{0%{scale:1 1}35%{scale:1.22 .72}70%{scale:.88 1.16}100%{scale:1 1}}
+
+
+/* SHIMEJI INTERACTION V3 */
+.public-shimeji.boing{
+  animation:shimejiSoftBoing .38s cubic-bezier(.22,.9,.28,1);
+}
+.public-shimeji.held{cursor:grabbing;animation:none!important}
+@keyframes shimejiSoftBoing{
+  0%{scale:1 1}
+  28%{scale:1.10 .88}
+  58%{scale:.95 1.08}
+  78%{scale:1.03 .98}
+  100%{scale:1 1}
+}
