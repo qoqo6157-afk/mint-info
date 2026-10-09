@@ -16,6 +16,7 @@ let user = null;
 let profile = null;
 let mode = 'desktop';
 let zoom = 0.70;
+const zoomByMode = { desktop:0.70, mobile:1.20 };
 let selectedId = null;
 let history = [];
 let future = [];
@@ -1137,8 +1138,27 @@ $('#siteBannerInput').onchange=async e=>{
 
 // mode / zoom / global events
 $('#desktopModeBtn').onclick=()=>switchMode('desktop');$('#mobileModeBtn').onclick=()=>switchMode('mobile');
-function switchMode(m){mode=m;$('#desktopModeBtn').classList.toggle('active',m==='desktop');$('#mobileModeBtn').classList.toggle('active',m==='mobile');zoom=m==='mobile'?.85:.70;$('#zoomRange').value=Math.round(zoom*100);$('#zoomText').textContent=Math.round(zoom*100)+'%';renderAll()}
-$('#zoomRange').oninput=e=>{zoom=+e.target.value/100;$('#zoomText').textContent=e.target.value+'%';renderCanvasSize()};
+function applyEditorZoom(next){
+  zoom=Math.max(.25,Math.min(2.20,Number(next)||1));
+  zoomByMode[mode]=zoom;
+  $('#zoomRange').value=Math.round(zoom*100);
+  $('#zoomText').textContent=Math.round(zoom*100)+'%';
+  renderCanvasSize();
+}
+function switchMode(m){
+  zoomByMode[mode]=zoom;
+  mode=m;
+  $('#desktopModeBtn').classList.toggle('active',m==='desktop');
+  $('#mobileModeBtn').classList.toggle('active',m==='mobile');
+  zoom=zoomByMode[m] ?? (m==='mobile'?1.20:.70);
+  $('#zoomRange').value=Math.round(zoom*100);
+  $('#zoomText').textContent=Math.round(zoom*100)+'%';
+  renderAll();
+}
+$('#zoomRange').oninput=e=>applyEditorZoom(+e.target.value/100);
+$('#zoomOutBtn').onclick=()=>applyEditorZoom(zoom-.10);
+$('#zoomInBtn').onclick=()=>applyEditorZoom(zoom+.10);
+$('#zoom100Btn').onclick=()=>applyEditorZoom(1);
 $('#pageCanvas').addEventListener('pointerdown',e=>{
   if(e.target!==canvas && e.target!==elementsLayer && !e.target.classList.contains('fx-layer')) return;
   selectedId=null;

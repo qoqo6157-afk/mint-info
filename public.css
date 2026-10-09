@@ -95,19 +95,6 @@ html,body{margin:0;min-height:100%;background:#fff}.public-site-body{overflow-x:
   overflow:visible;
 }
 
-/* MESSENGER BUBBLE SIZE V2 */
-.public-widget .messenger-preview{gap:calc(14px * var(--messenger-scale,1));}
-.public-widget .msg-row{gap:calc(10px * var(--messenger-scale,1));}
-.public-widget .msg-avatar{width:calc(38px * var(--messenger-scale,1));height:calc(38px * var(--messenger-scale,1));}
-.public-widget .msg-stack{max-width:84%;gap:calc(4px * var(--messenger-scale,1));}
-.public-widget .msg-stack small{font-size:calc(12px * var(--messenger-scale,1));}
-.public-widget .msg-bubble{
-  padding:calc(12px * var(--messenger-scale,1)) calc(16px * var(--messenger-scale,1));
-  border-radius:calc(17px * var(--messenger-scale,1));
-  font-size:calc(16px * var(--messenger-scale,1));
-  line-height:1.45;
-  min-height:calc(20px * var(--messenger-scale,1));
-}
 
 
 /* FULL PAGE BACKGROUND V1

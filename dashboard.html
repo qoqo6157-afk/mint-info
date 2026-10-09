@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>꾸미기 · mint info</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="editor.css?v=14">
+  <link rel="stylesheet" href="editor.css?v=16">
   <link rel="stylesheet" href="fonts.css?v=8">
 </head>
 <body class="editor-body">
@@ -144,9 +144,16 @@
       <div class="workspace-head">
         <div>
           <b id="modeLabel">PC 캔버스</b>
-          <span id="canvasSizeText" class="muted mini-text"></span>
+          <span id="canvasSizeText" class="muted mini-text"></span><span class="zoom-help">※ ZOOM은 편집 화면 확대/축소만 바뀌며 공개 페이지의 실제 크기는 바뀌지 않아요.</span>
         </div>
-        <div class="zoom-box">ZOOM <input id="zoomRange" type="range" min="25" max="100" value="70"><span id="zoomText">70%</span></div>
+        <div class="zoom-box">
+          ZOOM
+          <button id="zoomOutBtn" class="zoom-mini-btn" type="button">−</button>
+          <input id="zoomRange" type="range" min="25" max="220" value="70" step="5">
+          <button id="zoomInBtn" class="zoom-mini-btn" type="button">＋</button>
+          <button id="zoom100Btn" class="zoom-mini-btn zoom-actual-btn" type="button">100%</button>
+          <span id="zoomText">70%</span>
+        </div>
       </div>
       <div id="stageViewport" class="stage-viewport">
         <div id="stageScaler" class="stage-scaler">
@@ -364,6 +371,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="effects.js?v=8"></script>
-  <script src="editor.js?v=14"></script>
+  <script src="editor.js?v=16"></script>
 </body>
 </html>

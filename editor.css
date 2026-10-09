@@ -330,16 +330,22 @@ details.effect-box[open] > summary{margin-bottom:8px}
   pointer-events:none !important;
 }
 
-/* MESSENGER BUBBLE SIZE V2 */
-.widget-messenger .messenger-preview{gap:calc(14px * var(--messenger-scale,1));}
-.widget-messenger .msg-row{gap:calc(10px * var(--messenger-scale,1));}
-.widget-messenger .msg-avatar{width:calc(38px * var(--messenger-scale,1));height:calc(38px * var(--messenger-scale,1));}
-.widget-messenger .msg-stack{max-width:84%;gap:calc(4px * var(--messenger-scale,1));}
-.widget-messenger .msg-stack small{font-size:calc(12px * var(--messenger-scale,1));}
-.widget-messenger .msg-bubble{
-  padding:calc(12px * var(--messenger-scale,1)) calc(16px * var(--messenger-scale,1));
-  border-radius:calc(17px * var(--messenger-scale,1));
-  font-size:calc(16px * var(--messenger-scale,1));
-  line-height:1.45;
-  min-height:calc(20px * var(--messenger-scale,1));
+
+
+/* EDITOR ZOOM V2 */
+.zoom-box{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.zoom-box input[type="range"]{width:130px}
+.zoom-mini-btn{
+  border:1px solid #b9ddd5;
+  background:#fff;
+  color:#315f57;
+  border-radius:8px;
+  min-width:28px;
+  height:26px;
+  padding:0 7px;
+  cursor:pointer;
+  font-weight:800;
 }
+.zoom-mini-btn:hover{background:#effbf8}
+.zoom-actual-btn{font-size:10px;min-width:45px}
+.zoom-help{display:block;margin-top:3px;font-size:10px;color:#7a918d;font-weight:500}
