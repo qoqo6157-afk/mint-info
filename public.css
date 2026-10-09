@@ -105,3 +105,17 @@ body.public-site-body,
   min-height:100vh;
   background-attachment:scroll;
 }
+
+
+/* SHAPE TEXT V1 */
+.shape-content{
+  box-sizing:border-box;
+  display:flex;
+  width:100%;
+  height:100%;
+  padding:12px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow:hidden;
+  line-height:1.3;
+}

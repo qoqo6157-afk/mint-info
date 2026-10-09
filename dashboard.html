@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>꾸미기 · mint info</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="editor.css?v=20">
+  <link rel="stylesheet" href="editor.css?v=21">
   <link rel="stylesheet" href="fonts.css?v=8">
 </head>
 <body class="editor-body">
@@ -230,11 +230,43 @@
             </div>
 
             <div id="shapeControls" hidden>
+              <label class="editor-field">도형 안 텍스트
+                <textarea id="shapeText" rows="3" placeholder="도형 안에 표시할 글자"></textarea>
+              </label>
+              <div class="two-inputs">
+                <label class="editor-field">글자 크기<input id="shapeFontSize" type="number" min="6" max="200"></label>
+                <label class="editor-field">글자색<input id="shapeTextColor" type="color"></label>
+              </div>
+              <div class="two-inputs">
+                <label class="editor-field">글자 굵기
+                  <select id="shapeFontWeight">
+                    <option value="400">보통</option>
+                    <option value="500">중간</option>
+                    <option value="700">굵게</option>
+                    <option value="800">아주 굵게</option>
+                  </select>
+                </label>
+                <label class="editor-field">정렬
+                  <select id="shapeTextAlign">
+                    <option value="left">왼쪽</option>
+                    <option value="center">가운데</option>
+                    <option value="right">오른쪽</option>
+                  </select>
+                </label>
+              </div>
+              <label class="editor-field">세로 정렬
+                <select id="shapeTextVAlign">
+                  <option value="flex-start">위</option>
+                  <option value="center">가운데</option>
+                  <option value="flex-end">아래</option>
+                </select>
+              </label>
               <div class="two-inputs">
                 <label class="editor-field">채우기<input id="shapeFill" type="color"></label>
                 <label class="editor-field">테두리<input id="shapeBorder" type="color"></label>
               </div>
               <label class="editor-field">테두리 두께<input id="shapeBorderWidth" type="number" min="0" max="20"></label>
+              <div class="widget-help">글자 크기는 PC / 모바일에서 각각 따로 저장돼요.</div>
             </div>
 
             <div id="imageControls" hidden>
@@ -371,6 +403,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="effects.js?v=8"></script>
-  <script src="editor.js?v=20"></script>
+  <script src="editor.js?v=21"></script>
 </body>
 </html>

@@ -349,3 +349,17 @@ details.effect-box[open] > summary{margin-bottom:8px}
 .zoom-mini-btn:hover{background:#effbf8}
 .zoom-actual-btn{font-size:10px;min-width:45px}
 .zoom-help{display:block;margin-top:3px;font-size:10px;color:#7a918d;font-weight:500}
+
+
+/* SHAPE TEXT V1 */
+.shape-content{
+  box-sizing:border-box;
+  display:flex;
+  width:100%;
+  height:100%;
+  padding:12px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow:hidden;
+  line-height:1.3;
+}

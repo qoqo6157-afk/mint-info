@@ -98,6 +98,16 @@ function textStyleOf(el,targetMode=mode){
     textStroke:r.textStroke??p.textStroke??0
   };
 }
+
+function shapeTextStyleOf(el,targetMode=mode){
+  ensureResponsive(el);
+  const r=el.responsive?.[targetMode]||{};
+  const fallback=targetMode==='mobile'
+    ? Math.max(10,Math.round(Number(el.props?.shapeFontSize||24)*.67))
+    : Number(el.props?.shapeFontSize||24);
+  return {fontSize:Number(r.shapeFontSize??fallback)};
+}
+
 function imagePositionOf(el,targetMode=mode){
   const r=responsiveOf(el,targetMode);
   return {x:Number(r.imagePosX??50),y:Number(r.imagePosY??50)};
@@ -324,8 +334,16 @@ function baseElement(type) {
     common.layout = defaultLayout(160,260,220,58);
     common.borderRadius = 18;
   } else if (type === 'shape') {
-    common.props = { fill:'#ffffff', border:'#9adfce', borderWidth:2 };
+    common.props = {
+      fill:'#ffffff', border:'#9adfce', borderWidth:2,
+      text:'', textColor:'#173b35', fontWeight:'700',
+      textAlign:'center', textVAlign:'center', shapeFontSize:24
+    };
     common.layout = defaultLayout(180,180,260,180);
+    common.responsive = {
+      desktop:{shapeFontSize:24},
+      mobile:{shapeFontSize:16}
+    };
     common.borderRadius = 24;
   } else if (type === 'widget') {
     common.name = '위젯';
@@ -471,7 +489,19 @@ function buildContent(el){
     const a=document.createElement('a'); a.className='button-content'; a.textContent=el.props.text||'LINK'; a.href=el.props.url||'#'; a.target='_blank'; a.rel='noopener noreferrer';
     a.style.background=el.props.bg||'#56cfb8'; a.style.color=el.props.color||'#fff'; a.addEventListener('click',e=>e.preventDefault()); wrap.appendChild(a);
   } else if(el.type === 'shape'){
-    const d=document.createElement('div'); d.className='shape-content'; d.style.background=el.props.fill||'#fff'; d.style.border=`${el.props.borderWidth||0}px solid ${el.props.border||'#000'}`; wrap.appendChild(d);
+    const d=document.createElement('div');
+    d.className='shape-content';
+    d.style.background=el.props.fill||'#fff';
+    d.style.border=`${el.props.borderWidth||0}px solid ${el.props.border||'#000'}`;
+    const ss=shapeTextStyleOf(el);
+    d.style.fontSize=`${ss.fontSize}px`;
+    d.style.fontWeight=el.props.fontWeight||'700';
+    d.style.color=el.props.textColor||'#173b35';
+    d.style.textAlign=el.props.textAlign||'center';
+    d.style.alignItems=el.props.textVAlign||'center';
+    d.style.justifyContent=el.props.textAlign==='left'?'flex-start':el.props.textAlign==='right'?'flex-end':'center';
+    d.textContent=el.props.text||'';
+    wrap.appendChild(d);
   } else if(el.type === 'widget'){
     wrap.classList.add('widget-content',`widget-${el.props.kind||'generic'}`);
     wrap.style.background=el.props.bg||'#fff';
@@ -705,7 +735,17 @@ function renderInspectorCore(){
     }else setFontStatus('');
     const ts=textStyleOf(el);$('#responsiveTextNote').textContent=mode==='desktop'?'현재 PC 글자 크기 설정':'현재 MOBILE 글자 크기 설정';$('#fontSize').value=ts.fontSize;$('#fontWeight').value=el.props.fontWeight||'800';$('#textColor').value=el.props.color||'#173b35';$('#textAlign').value=el.props.align||'left';$('#letterSpacing').value=ts.letterSpacing;$('#lineHeight').value=ts.lineHeight;$('#textShadow').checked=!!el.props.textShadow;$('#textStroke').value=ts.textStroke;}
   if(el.type==='button'){$('#buttonText').value=el.props.text||'';$('#buttonUrl').value=el.props.url||'';$('#buttonBg').value=el.props.bg||'#56cfb8';$('#buttonColor').value=el.props.color||'#ffffff';}
-  if(el.type==='shape'){$('#shapeFill').value=el.props.fill||'#ffffff';$('#shapeBorder').value=el.props.border||'#9adfce';$('#shapeBorderWidth').value=el.props.borderWidth||0;}
+  if(el.type==='shape'){
+    $('#shapeFill').value=el.props.fill||'#ffffff';
+    $('#shapeBorder').value=el.props.border||'#9adfce';
+    $('#shapeBorderWidth').value=el.props.borderWidth||0;
+    $('#shapeText').value=el.props.text||'';
+    $('#shapeTextColor').value=el.props.textColor||'#173b35';
+    $('#shapeFontWeight').value=el.props.fontWeight||'700';
+    $('#shapeTextAlign').value=el.props.textAlign||'center';
+    $('#shapeTextVAlign').value=el.props.textVAlign||'center';
+    $('#shapeFontSize').value=shapeTextStyleOf(el).fontSize;
+  }
   if(el.type==='image'||el.type==='sticker'){
     $('#imageFit').value=el.props.fit||'cover';
     const ip=imagePositionOf(el);
@@ -956,10 +996,17 @@ function bindInspector(){
     if(id==='elName')el.name=$('#elName').value;if(id==='elX')l.x=+$(`#${id}`).value;if(id==='elY')l.y=+$(`#${id}`).value;if(id==='elW')l.w=Math.max(20,+$(`#${id}`).value);if(id==='elH')l.h=Math.max(20,+$(`#${id}`).value);if(id==='rotation')el.rotation=+$(`#${id}`).value;if(id==='opacity')el.opacity=+$(`#${id}`).value;if(id==='borderRadius')el.borderRadius=+$(`#${id}`).value;
     renderElements();renderLayers();markDirty();renderInspector();
   }));
-  const map={textValue:['text','text'],fontWeight:['text','fontWeight'],textColor:['text','color'],textAlign:['text','align'],textShadow:['text','textShadow'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
+  const map={textValue:['text','text'],fontWeight:['text','fontWeight'],textColor:['text','color'],textAlign:['text','align'],textShadow:['text','textShadow'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeText:['shape','text'],shapeTextColor:['shape','textColor'],shapeFontWeight:['shape','fontWeight'],shapeTextAlign:['shape','textAlign'],shapeTextVAlign:['shape','textVAlign'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
   Object.entries(map).forEach(([id])=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el)return;snapshot();let v=$('#'+id).type==='checkbox'?$('#'+id).checked:$('#'+id).value;if(['shapeBorderWidth'].includes(id))v=+v;el.props[map[id][1]]=v;renderElements();markDirty()}));
   const responsiveTextMap={fontSize:'fontSize',letterSpacing:'letterSpacing',lineHeight:'lineHeight',textStroke:'textStroke'};
   Object.entries(responsiveTextMap).forEach(([id,key])=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el||el.type!=='text')return;snapshot();ensureResponsive(el);el.responsive[mode][key]=+$('#'+id).value;renderElements();markDirty()}));
+  $('#shapeFontSize').addEventListener('input',()=>{
+    const el=selected();if(!el||el.type!=='shape')return;
+    snapshot();ensureResponsive(el);
+    el.responsive[mode].shapeFontSize=+$('#shapeFontSize').value;
+    el.props.shapeFontSize=+$('#shapeFontSize').value;
+    renderElements();markDirty();
+  });
 
   ['imagePosX','imagePosY'].forEach(id=>$('#'+id).addEventListener('input',()=>{
     const el=selected();if(!el||!(el.type==='image'||el.type==='sticker'))return;
