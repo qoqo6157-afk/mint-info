@@ -129,3 +129,11 @@ LAYER SORT + STICKER REPLACE V1
 - 스티커는 기존 위치/크기/회전/애니메이션을 유지한 채 사진만 교체됩니다.
 - 스티커 교체 파일은 PNG/GIF 선택 가능.
 - SQL 변경 없음.
+
+
+SHIMEJI FIX V2
+- 기존 저장 데이터에 shimeji.images 배열이 없을 때 PNG 추가 시
+  'Cannot read properties of undefined (reading push)' 오류가 나던 문제 수정.
+- 예전 페이지 설정을 불러와도 시메지 기본값과 images 배열을 자동 복구합니다.
+- PNG 추가/전체 제거/설정 변경 경로 모두 방어 처리했습니다.
+- SQL 변경 없음.

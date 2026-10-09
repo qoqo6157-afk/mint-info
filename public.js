@@ -304,8 +304,8 @@ function clearPublicShimeji(){
 function renderPublicShimeji(){
   clearPublicShimeji();
   const root=document.getElementById('publicShimejiLayer');
-  const s=site?.content?.effects?.shimeji;
-  if(!root||!s?.enabled||!Array.isArray(s.images)||!s.images.length)return;
+  const s=site?.content?.effects?.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};
+  if(!root||!s.enabled||!Array.isArray(s.images)||!s.images.length)return;
 
   const count=Math.max(1,Math.min(12,Number(s.count||3)));
   const size=Math.max(28,Number(s.size||76));

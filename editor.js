@@ -1226,15 +1226,18 @@ function openEffectPanels(){}
 function bindPageControls(){
   ['bgType','bgColor1','bgColor2','bgAngle','bgFit'].forEach(id=>$('#'+id).addEventListener('input',()=>{snapshot();const b=config.background;if(id==='bgType')b.type=$('#bgType').value;if(id==='bgColor1')b.color1=$('#bgColor1').value;if(id==='bgColor2')b.color2=$('#bgColor2').value;if(id==='bgAngle')b.angle=+$('#bgAngle').value;if(id==='bgFit')b.fit=$('#bgFit').value;applyBackground();syncPageControls();markDirty()}));
   const defs={snow:['Enabled','Count','Speed','Size','Drift'],petal:['Enabled','Count','Speed','Size','Drift','Spin'],rain:['Enabled','Count','Speed','Length','Angle'],sparkle:['Enabled','Count','Interval','Duration','Size'],shimeji:['Enabled','Count','Size','Speed','Bounce']};
-  Object.entries(defs).forEach(([k,props])=>props.forEach(cap=>{const id=k+cap;$('#'+id).addEventListener('input',()=>{snapshot();const prop=cap[0].toLowerCase()+cap.slice(1);const inp=$('#'+id);config.effects[k][prop]=inp.type==='checkbox'?inp.checked:+inp.value;syncPageControls();renderEffects();markDirty()})}));
+  Object.entries(defs).forEach(([k,props])=>props.forEach(cap=>{const id=k+cap;$('#'+id).addEventListener('input',()=>{snapshot();const prop=cap[0].toLowerCase()+cap.slice(1);const inp=$('#'+id);config.effects=config.effects||{};config.effects[k]=config.effects[k]||clone(DEFAULT_CONFIG.effects[k]||{});config.effects[k][prop]=inp.type==='checkbox'?inp.checked:+inp.value;syncPageControls();renderEffects();markDirty()})}));
   $('#shimejiUploadBtn').onclick=()=>$('#shimejiInput').click();
-  $('#shimejiClearBtn').onclick=()=>{snapshot();config.effects.shimeji.images=[];renderShimejiAssets();renderShimejiPreview();markDirty();toast('시메지 PNG를 모두 제거했어요')};
+  $('#shimejiClearBtn').onclick=()=>{snapshot();config.effects=config.effects||{};config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};config.effects.shimeji.images=[];renderShimejiAssets();renderShimejiPreview();markDirty();toast('시메지 PNG를 모두 제거했어요')};
   $('#shimejiInput').onchange=async e=>{
     const files=[...(e.target.files||[])];
     if(!files.length)return;
     try{
       const valid=files.filter(f=>f.type==='image/png'||/\.png$/i.test(f.name||''));
       if(valid.length!==files.length)toast('시메지는 PNG 파일만 업로드할 수 있어요.',true);
+      config.effects=config.effects||{};
+      config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};
+      if(!Array.isArray(config.effects.shimeji.images))config.effects.shimeji.images=[];
       for(const f of valid){
         const url=await uploadAsset(f);
         config.effects.shimeji.images.push(url);
@@ -1331,17 +1334,19 @@ async function loadData(){
   renderAll();
 }
 function mergeConfig(c){
+  const defaults=clone(DEFAULT_CONFIG);
   const n=clone(DEFAULT_CONFIG);
   Object.assign(n,c);
-  n.canvas={...n.canvas,...(c.canvas||{})};
-  n.background={...n.background,...(c.background||{})};
+  n.canvas={...defaults.canvas,...(c.canvas||{})};
+  n.background={...defaults.background,...(c.background||{})};
   n.effects={
-    snow:{...n.effects.snow,...(c.effects?.snow||{})},
-    petal:{...n.effects.petal,...(c.effects?.petal||{})},
-    rain:{...n.effects.rain,...(c.effects?.rain||{})},
-    sparkle:{...n.effects.sparkle,...(c.effects?.sparkle||{})},
-    shimeji:{...n.effects.shimeji,...(c.effects?.shimeji||{})}
+    snow:{...defaults.effects.snow,...(c.effects?.snow||{})},
+    petal:{...defaults.effects.petal,...(c.effects?.petal||{})},
+    rain:{...defaults.effects.rain,...(c.effects?.rain||{})},
+    sparkle:{...defaults.effects.sparkle,...(c.effects?.sparkle||{})},
+    shimeji:{...defaults.effects.shimeji,...(c.effects?.shimeji||{})}
   };
+  if(!Array.isArray(n.effects.shimeji.images))n.effects.shimeji.images=[];
   n.elements=Array.isArray(c.elements)?c.elements:[];
   n.elements.forEach(el=>{
     el.layout=el.layout||defaultLayout();
