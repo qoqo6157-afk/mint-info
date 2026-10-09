@@ -183,3 +183,20 @@ body.public-site-body,
     touch-action:none;
   }
 }
+
+
+/* SHIMEJI CLICK FIX V6
+   Final override: no keyframe shake or launch on click.
+   The JS runtime controls squash/stretch and the 12px hop directly. */
+.public-shimeji{
+  animation:none !important;
+  transform:
+    translate3d(var(--shimeji-x,0px),var(--shimeji-y,0px),0)
+    scaleX(var(--shimeji-face,1))
+    scale(var(--shimeji-sx,1),var(--shimeji-sy,1)) !important;
+  transform-origin:center bottom !important;
+  transition:none !important;
+}
+.public-shimeji.boing{
+  animation:none !important;
+}

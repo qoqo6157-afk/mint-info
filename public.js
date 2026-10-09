@@ -320,47 +320,58 @@ function renderPublicShimeji(){
     el.style.width=size+'px';
     el.style.height=size+'px';
 
+    const initialV=(Math.random()>.5?1:-1)*(.035+Math.random()*.045)*walkSpeed;
     const sp={
       el,
       x:Math.random()*Math.max(0,innerWidth-size),
       y:Math.max(0,innerHeight-size),
-      vx:(Math.random()>.5?1:-1)*(.035+Math.random()*.045)*walkSpeed,
+      vx:initialV,
       vy:0,
+
       pointerId:null,
       pressX:0,pressY:0,
       ox:0,oy:0,
       lastX:0,lastY:0,lastT:0,
       dragging:false,
-      hopT:0,
-      hopActive:false
+
+      boingActive:false,
+      boingElapsed:0,
+      boingDuration:420,
+      walkVxBeforeBoing:initialV,
+      sx:1,sy:1
     };
     root.appendChild(el);
 
-    const boing=()=>{
-      sp.hopT=0;
-      sp.hopActive=true;
-      sp.vx=0;
+    const startBoing=()=>{
+      // Pure visual squash/stretch + tiny vertical hop.
+      // No throw velocity is added here.
+      sp.boingActive=true;
+      sp.boingElapsed=0;
+      sp.walkVxBeforeBoing = Math.abs(sp.vx)>.005 ? sp.vx : ((Math.random()>.5?1:-1)*.05*walkSpeed);
       sp.vy=0;
-      el.classList.remove('boing');
-      void el.offsetWidth;
-      el.classList.add('boing');
+      sp.sx=1;sp.sy=1;
     };
 
     el.addEventListener('pointerdown',e=>{
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
       const rect=el.getBoundingClientRect();
+
       sp.pointerId=e.pointerId;
       sp.pressX=e.clientX;sp.pressY=e.clientY;
       sp.ox=e.clientX-rect.left;sp.oy=e.clientY-rect.top;
       sp.lastX=e.clientX;sp.lastY=e.clientY;sp.lastT=performance.now();
       sp.dragging=false;
+
+      // Cancel an in-progress boing cleanly, but do NOT launch or shake.
+      sp.boingActive=false;
+      sp.sx=1;sp.sy=1;
     });
 
     el.addEventListener('pointermove',e=>{
       if(e.pointerId!==sp.pointerId)return;
       const dist=Math.hypot(e.clientX-sp.pressX,e.clientY-sp.pressY);
-      const dragThreshold=(e.pointerType==='touch'||e.pointerType==='pen')?18:9;
+      const dragThreshold=(e.pointerType==='touch'||e.pointerType==='pen')?22:10;
       if(!sp.dragging && dist<dragThreshold)return;
 
       if(!sp.dragging){
@@ -379,25 +390,29 @@ function renderPublicShimeji(){
 
     const release=e=>{
       if(e.pointerId!==sp.pointerId)return;
+
       if(sp.dragging){
-        // Only an actual drag becomes a throw.
-        // Touch throws are intentionally softer so mobile scrolling/gestures don't launch sprites across the screen.
-        const throwPower=(e.pointerType==='touch'||e.pointerType==='pen')?7:12;
+        // Throw only after a real drag.
+        const throwPower=(e.pointerType==='touch'||e.pointerType==='pen')?5:10;
         sp.vx*=throwPower;
         sp.vy*=throwPower;
         el.classList.remove('held');
       }else{
-        // A simple click/tap stays in place and only does the soft "boing".
-        boing();
+        // Tap/click: stay in the same place and do only the soft squash-hop.
+        startBoing();
       }
+
       sp.pointerId=null;
       sp.dragging=false;
     };
+
     el.addEventListener('pointerup',release);
     el.addEventListener('pointercancel',e=>{
       if(e.pointerId!==sp.pointerId)return;
       el.classList.remove('held');
-      sp.pointerId=null;sp.dragging=false;
+      sp.pointerId=null;
+      sp.dragging=false;
+      sp.sx=1;sp.sy=1;
     });
 
     sprites.push(sp);
@@ -405,6 +420,7 @@ function renderPublicShimeji(){
 
   let last=performance.now();
   let lastViewportH=innerHeight;
+
   const tick=now=>{
     const dt=Math.min(32,now-last);last=now;
     const viewportH=innerHeight;
@@ -413,32 +429,57 @@ function renderPublicShimeji(){
     const viewportChanged=Math.abs(viewportH-lastViewportH)>2;
 
     for(const sp of sprites){
-      // Mobile browser UI opening/closing while the page scrolls changes innerHeight.
-      // Snap grounded sprites to the new floor without treating that as an impact.
-      if(viewportChanged && sp.pointerId===null && sp.y>=Math.max(0,lastViewportH-size)-4){
+      if(viewportChanged && sp.pointerId===null && !sp.dragging && sp.y>=Math.max(0,lastViewportH-size)-4){
         sp.y=floor;
         sp.vy=0;
       }
-      if(sp.hopActive && sp.pointerId===null){
-        sp.hopT += dt;
-        const t=sp.hopT/360;
-        if(t>=1){
-          sp.hopActive=false;
-          sp.hopT=0;
-          sp.y=floor;
+
+      if(sp.boingActive && sp.pointerId===null){
+        sp.boingElapsed+=dt;
+        const t=Math.min(1,sp.boingElapsed/sp.boingDuration);
+
+        // 0-25%: flatten
+        // 25-52%: stretch upward
+        // 52-100%: settle back to normal
+        if(t<.25){
+          const q=t/.25;
+          sp.sx=1 + .24*q;
+          sp.sy=1 - .30*q;
+        }else if(t<.52){
+          const q=(t-.25)/.27;
+          sp.sx=1.24 - .34*q;
+          sp.sy=.70 + .48*q;
         }else{
-          // Tiny in-place hop: rise about 14px, then settle back to the floor.
-          const hop=Math.sin(Math.PI*t)*14;
-          sp.y=floor-hop;
+          const q=(t-.52)/.48;
+          const ease=1-Math.pow(1-q,2);
+          sp.sx=.90 + .10*ease;
+          sp.sy=1.18 - .18*ease;
+        }
+
+        // Tiny hop in place, max ~12px, beginning after the squash.
+        const hopPhase=Math.max(0,(t-.22)/.78);
+        const hop=hopPhase>0 ? Math.sin(Math.PI*hopPhase)*12 : 0;
+        sp.y=floor-hop;
+
+        // Keep x fixed during the click animation.
+        if(t>=1){
+          sp.boingActive=false;
+          sp.boingElapsed=0;
+          sp.sx=1;sp.sy=1;
+          sp.y=floor;
+          sp.vy=0;
+          sp.vx=sp.walkVxBeforeBoing;
         }
       }else if(sp.pointerId===null || !sp.dragging){
         const onFloor=sp.y>=floor-.5;
+
         if(onFloor && Math.abs(sp.vy)<.04){
           sp.y=floor;sp.vy=0;
+
           if(Math.abs(sp.vx)<.018){
             sp.vx=(Math.random()>.5?1:-1)*(.035+Math.random()*.045)*walkSpeed;
           }
-          // Keep normal walking speed from slowly dying after wall bounces.
+
           const minWalk=.035*walkSpeed,maxWalk=.08*walkSpeed;
           if(Math.abs(sp.vx)<minWalk)sp.vx=(sp.vx<0?-1:1)*minWalk;
           if(Math.abs(sp.vx)>maxWalk && Math.abs(sp.vy)<.04)sp.vx=(sp.vx<0?-1:1)*maxWalk;
@@ -459,14 +500,18 @@ function renderPublicShimeji(){
         if(sp.y<0){sp.y=0;sp.vy=Math.abs(sp.vy)*bounce}
       }
 
-      const face=sp.vx<0?-1:1;
+      const face=(sp.vx<0?-1:1);
       sp.el.style.setProperty('--shimeji-x',`${sp.x}px`);
       sp.el.style.setProperty('--shimeji-y',`${sp.y}px`);
       sp.el.style.setProperty('--shimeji-face',String(face));
+      sp.el.style.setProperty('--shimeji-sx',String(sp.sx));
+      sp.el.style.setProperty('--shimeji-sy',String(sp.sy));
     }
+
     lastViewportH=viewportH;
     publicShimejiFrame=requestAnimationFrame(tick);
   };
+
   publicShimejiFrame=requestAnimationFrame(tick);
 }
 function render(){if(!site)return;const c=site.content;mode=innerWidth<=600?'mobile':'desktop';const size=c.canvas?.[mode]||{width:390,height:780};canvas.style.width=size.width+'px';canvas.style.height=size.height+'px';scaler.style.width=size.width+'px';scaler.style.height=size.height+'px';applyBackground(c);layer.innerHTML='';[...(c.elements||[])].sort((a,b)=>(a.z||0)-(b.z||0)).forEach(el=>{if(el.hidden)return;const l=el.layout?.[mode]||el.layout?.desktop;if(!l)return;const n=document.createElement('div');n.className=`public-element ${animClass(el)}`;Object.assign(n.style,{left:`${l.x}px`,top:`${l.y}px`,width:`${l.w}px`,height:`${l.h}px`,zIndex:String(el.z||1),opacity:String(el.opacity??1),transform:`rotate(${el.rotation||0}deg)`});applyAnim(n,el);n.appendChild(content(el));layer.appendChild(n)});MintEffects.render(fxLayer,c.effects||{});fit(size);hydrateWidgets();renderPublicShimeji()}
