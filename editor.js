@@ -39,7 +39,7 @@ const DEFAULT_CONFIG = {
     petal: { enabled: false, count: 24, speed: 7, size: 14, drift: 55, spin: 540 },
     rain: { enabled: false, count: 70, speed: 1.5, length: 26, angle: 10 },
     sparkle: { enabled: true, count: 8, interval: 900, duration: 2.2, size: 18 },
-    shimeji: { enabled:false, images:[], count:3, size:76, speed:1, bounce:.65 }
+    shimeji: { enabled:false, images:[], count:3, size:76, speed:1, bounce:.25 }
   },
   elements: []
 };
@@ -1262,14 +1262,14 @@ function bindPageControls(){
   const defs={snow:['Enabled','Count','Speed','Size','Drift'],petal:['Enabled','Count','Speed','Size','Drift','Spin'],rain:['Enabled','Count','Speed','Length','Angle'],sparkle:['Enabled','Count','Interval','Duration','Size'],shimeji:['Enabled','Size','Speed','Bounce']};
   Object.entries(defs).forEach(([k,props])=>props.forEach(cap=>{const id=k+cap;$('#'+id).addEventListener('input',()=>{snapshot();const prop=cap[0].toLowerCase()+cap.slice(1);const inp=$('#'+id);config.effects=config.effects||{};config.effects[k]=config.effects[k]||clone(DEFAULT_CONFIG.effects[k]||{});config.effects[k][prop]=inp.type==='checkbox'?inp.checked:+inp.value;syncPageControls();renderEffects();markDirty()})}));
   $('#shimejiUploadBtn').onclick=()=>$('#shimejiInput').click();
-  $('#shimejiClearBtn').onclick=()=>{snapshot();config.effects=config.effects||{};config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};config.effects.shimeji.images=[];renderShimejiAssets();renderShimejiPreview();markDirty();toast('시메지 PNG를 모두 제거했어요')};
+  $('#shimejiClearBtn').onclick=()=>{snapshot();config.effects=config.effects||{};config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.25};config.effects.shimeji.images=[];renderShimejiAssets();renderShimejiPreview();markDirty();toast('시메지 PNG를 모두 제거했어요')};
   $('#shimejiInput').onchange=async e=>{
     const f=e.target.files?.[0];
     if(!f)return;
     if(!(f.type==='image/png'||/\.png$/i.test(f.name||''))){toast('시메지는 PNG 파일만 업로드할 수 있어요.',true);e.target.value='';return;}
     try{
       config.effects=config.effects||{};
-      config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.65};
+      config.effects.shimeji=config.effects.shimeji||{enabled:false,images:[],count:3,size:76,speed:1,bounce:.25};
       if(!Array.isArray(config.effects.shimeji.images))config.effects.shimeji.images=[];
       if(config.effects.shimeji.images.length>=12){toast('시메지는 최대 12마리까지 추가할 수 있어요.',true);e.target.value='';return;}
       const url=await uploadAsset(f);
