@@ -82,6 +82,31 @@ function requestedName(){
   return known.has(last)?'':last;
 }
 function animClass(el){return el.animation?.type&&el.animation.type!=='none'?`anim-${el.animation.type}`:''}
+function publicResponsive(el,targetMode=mode){
+  const r=el.responsive?.[targetMode]||{};
+  const p=el.props||{};
+  if(el.type==='text'){
+    const desktop=el.responsive?.desktop||{};
+    const dSize=Number(desktop.fontSize??p.fontSize??32);
+    return {
+      fontSize:Number(r.fontSize??(targetMode==='mobile'?Math.max(8,Math.round(dSize*.62)):dSize)),
+      letterSpacing:Number(r.letterSpacing??(targetMode==='mobile'?Number(desktop.letterSpacing??p.letterSpacing??0)*.62:Number(desktop.letterSpacing??p.letterSpacing??0))),
+      lineHeight:Number(r.lineHeight??desktop.lineHeight??p.lineHeight??1.2),
+      textStroke:Number(r.textStroke??(targetMode==='mobile'?Number(desktop.textStroke??p.textStroke??0)*.62:Number(desktop.textStroke??p.textStroke??0)))
+    };
+  }
+  return r;
+}
+function publicImagePosition(el,targetMode=mode){
+  const r=el.responsive?.[targetMode]||el.responsive?.desktop||{};
+  return {x:Number(r.imagePosX??el.props?.imagePosX??50),y:Number(r.imagePosY??el.props?.imagePosY??50)};
+}
+function publicMessengerScale(el,targetMode=mode){
+  const r=publicResponsive(el,targetMode),l=el.layout?.[targetMode]||el.layout?.desktop||{w:520};
+  const manual=Number(r.messengerScale??(targetMode==='mobile'?.82:1));
+  const auto=Math.min(2.2,Math.max(.72,Number(l.w||520)/520));
+  return manual*auto;
+}
 function applyAnim(node,el){const a=el.animation||{};node.style.setProperty('--anim-speed',`${a.speed||3}s`);node.style.setProperty('--anim-delay',`${a.delay||0}s`);node.style.setProperty('--anim-intensity',`${a.intensity||12}px`);node.style.setProperty('--anim-intensity-num',String((a.intensity||12)/100));node.style.setProperty('--anim-iteration',a.loop===false?'1':'infinite')}
 
 function escapePublic(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
@@ -119,8 +144,38 @@ function publicWidgetMarkup(el){
   return widgetShell(el,head);
 }
 
-function content(el){const w=document.createElement('div');w.className='canvas-content';if(el.type==='text'){w.classList.add('text-content');w.textContent=el.props.text||'';Object.assign(w.style,{fontFamily:publicFont(el.props.fontFamily),fontSize:`${el.props.fontSize||32}px`,fontWeight:el.props.fontWeight||'800',color:el.props.color||'#111',background:'transparent',textAlign:el.props.align||'left',letterSpacing:`${el.props.letterSpacing||0}px`,lineHeight:String(el.props.lineHeight||1.2),display:'flex',alignItems:'center',padding:'8px',textShadow:el.props.textShadow?'0 3px 10px rgba(0,0,0,.22)':'none',WebkitTextStroke:`${el.props.textStroke||0}px rgba(0,0,0,.75)`})}else if(el.type==='image'||el.type==='sticker'){const img=document.createElement('img');img.src=el.props.src||'';img.alt='';img.style.objectFit=el.props.fit||'cover';w.appendChild(img)}else if(el.type==='button'){const a=document.createElement('a');a.className='button-content';a.textContent=el.props.text||'LINK';a.href=el.props.url||'#';a.target='_blank';a.rel='noopener noreferrer';a.style.background=el.props.bg||'#56cfb8';a.style.color=el.props.color||'#fff';w.appendChild(a)}else if(el.type==='shape'){const d=document.createElement('div');d.className='shape-content';d.style.background=el.props.fill||'#fff';d.style.border=`${el.props.borderWidth||0}px solid ${el.props.border||'#000'}`;w.appendChild(d)}else if(el.type==='widget'){w.classList.add('widget-content');w.innerHTML=publicWidgetMarkup(el)}w.style.borderRadius=`${el.borderRadius||0}px`;if(el.boxShadow)w.style.boxShadow='0 12px 30px rgba(25,70,62,.18)';return w}
+function content(el){const w=document.createElement('div');w.className='canvas-content';if(el.type==='text'){const ts=publicResponsive(el);w.classList.add('text-content');w.textContent=el.props.text||'';Object.assign(w.style,{fontFamily:publicFont(el.props.fontFamily),fontSize:`${ts.fontSize}px`,fontWeight:el.props.fontWeight||'800',color:el.props.color||'#111',background:'transparent',textAlign:el.props.align||'left',letterSpacing:`${ts.letterSpacing}px`,lineHeight:String(ts.lineHeight),display:'flex',alignItems:'center',padding:'8px',textShadow:el.props.textShadow?'0 3px 10px rgba(0,0,0,.22)':'none',WebkitTextStroke:`${ts.textStroke}px rgba(0,0,0,.75)`})}else if(el.type==='image'||el.type==='sticker'){const img=document.createElement('img');img.src=el.props.src||'';img.alt='';img.style.objectFit=el.props.fit||'cover';const ip=publicImagePosition(el);img.style.objectPosition=`${ip.x}% ${ip.y}%`;w.appendChild(img)}else if(el.type==='button'){const a=document.createElement('a');a.className='button-content';a.textContent=el.props.text||'LINK';a.href=el.props.url||'#';a.target='_blank';a.rel='noopener noreferrer';a.style.background=el.props.bg||'#56cfb8';a.style.color=el.props.color||'#fff';w.appendChild(a)}else if(el.type==='shape'){const d=document.createElement('div');d.className='shape-content';d.style.background=el.props.fill||'#fff';d.style.border=`${el.props.borderWidth||0}px solid ${el.props.border||'#000'}`;w.appendChild(d)}else if(el.type==='widget'){w.classList.add('widget-content');if(el.props?.kind==='messenger')w.style.setProperty('--messenger-scale',String(publicMessengerScale(el)));w.innerHTML=publicWidgetMarkup(el)}w.style.borderRadius=`${el.borderRadius||0}px`;if(el.boxShadow)w.style.boxShadow='0 12px 30px rgba(25,70,62,.18)';return w}
 function applyBackground(c){const b=c.background||{};canvas.style.backgroundColor=b.color1||'#fff';canvas.style.backgroundImage='none';canvas.style.backgroundPosition='center';if(b.type==='gradient')canvas.style.backgroundImage=`linear-gradient(${b.angle||0}deg, ${b.color1}, ${b.color2})`;if(b.type==='image'&&b.image){canvas.style.backgroundImage=`url("${b.image}")`;if(b.fit==='repeat'){canvas.style.backgroundRepeat='repeat';canvas.style.backgroundSize='auto'}else{canvas.style.backgroundRepeat='no-repeat';canvas.style.backgroundSize=b.fit||'cover'}}}
+
+
+/* Image protection: best-effort deterrence for the public page.
+   Blocks common right-click / drag / mobile long-press save routes. */
+function enableImageProtection(){
+  document.addEventListener('contextmenu', e=>{
+    if(e.target.closest?.('#publicCanvas')) e.preventDefault();
+  }, {capture:true});
+
+  document.addEventListener('dragstart', e=>{
+    if(e.target instanceof HTMLImageElement && e.target.closest?.('#publicCanvas')){
+      e.preventDefault();
+    }
+  }, {capture:true});
+
+  const lockImages=()=>{
+    document.querySelectorAll('#publicCanvas img').forEach(img=>{
+      img.draggable=false;
+      img.setAttribute('draggable','false');
+      img.setAttribute('oncontextmenu','return false;');
+    });
+  };
+
+  lockImages();
+  const canvas=document.getElementById('publicCanvas');
+  if(canvas){
+    new MutationObserver(lockImages).observe(canvas,{childList:true,subtree:true});
+  }
+}
+enableImageProtection();
 
 function visitorKey(){
   let key=localStorage.getItem('mint_info_visitor_key');
