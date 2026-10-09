@@ -127,10 +127,118 @@ createBtn.addEventListener('click', async () => {
 
 (async () => {
   if (await requireAdmin()) {
-    await loadCodes();
+    await Promise.all([loadCodes(), loadBlockedDomains()]);
   }
 })();
 
+
+
+const blockedDomainInput = document.querySelector('#blockedDomainInput');
+const addBlockedDomainBtn = document.querySelector('#addBlockedDomainBtn');
+const blockedDomainList = document.querySelector('#blockedDomainList');
+const blockedDomainMessage = document.querySelector('#blockedDomainMessage');
+
+function normalizeBlockedName(value){
+  return String(value||'').trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+}
+function validBlockedName(value){
+  return /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(value);
+}
+function setBlockedMessage(text,type=''){
+  if(!blockedDomainMessage)return;
+  blockedDomainMessage.className=`message ${type}`.trim();
+  blockedDomainMessage.textContent=text||'';
+}
+async function loadBlockedDomains(){
+  if(!blockedDomainList)return;
+  const {data,error}=await db
+    .from('blocked_site_names')
+    .select('name,created_at')
+    .order('created_at',{ascending:false});
+
+  if(error){
+    setBlockedMessage(`차단 목록을 불러오지 못했어요: ${error.message}`,'error');
+    return;
+  }
+
+  blockedDomainList.innerHTML='';
+  if(!(data||[]).length){
+    blockedDomainList.innerHTML='<div class="blocked-domain-empty">현재 차단된 주소 이름이 없습니다.</div>';
+    return;
+  }
+
+  (data||[]).forEach(row=>{
+    const item=document.createElement('div');
+    item.className='blocked-domain-item';
+
+    const info=document.createElement('div');
+    const name=document.createElement('b');
+    name.textContent=row.name;
+    const url=document.createElement('small');
+    url.textContent=`/${row.name}`;
+    info.append(name,url);
+
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='btn blocked-release-btn';
+    button.textContent='차단 해제';
+    button.onclick=async()=>{
+      button.disabled=true;
+      const {error}=await db.from('blocked_site_names').delete().eq('name',row.name);
+      if(error){
+        setBlockedMessage(`차단 해제 실패: ${error.message}`,'error');
+        button.disabled=false;
+        return;
+      }
+      setBlockedMessage(`${row.name} 주소의 사용 금지를 해제했어요.`,'success');
+      await loadBlockedDomains();
+    };
+
+    item.append(info,button);
+    blockedDomainList.appendChild(item);
+  });
+}
+
+if(blockedDomainInput){
+  blockedDomainInput.addEventListener('input',e=>{
+    const normalized=normalizeBlockedName(e.target.value);
+    if(e.target.value!==normalized)e.target.value=normalized;
+  });
+  blockedDomainInput.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();addBlockedDomainBtn?.click();}
+  });
+}
+if(addBlockedDomainBtn){
+  addBlockedDomainBtn.addEventListener('click',async()=>{
+    if(!currentUser && !(await requireAdmin()))return;
+    const name=normalizeBlockedName(blockedDomainInput.value);
+
+    if(!validBlockedName(name)){
+      setBlockedMessage('영문 소문자/숫자/하이픈(-)만 사용해 3~30자로 입력해 주세요.','error');
+      return;
+    }
+
+    addBlockedDomainBtn.disabled=true;
+    setBlockedMessage('사용 금지 처리 중…');
+
+    const {error}=await db.from('blocked_site_names').insert({
+      name,
+      created_by:currentUser.id
+    });
+
+    addBlockedDomainBtn.disabled=false;
+
+    if(error){
+      if(error.code==='23505')setBlockedMessage(`${name}은(는) 이미 차단되어 있어요.`,'error');
+      else setBlockedMessage(`사용 금지 실패: ${error.message}`,'error');
+      return;
+    }
+
+    blockedDomainInput.value='';
+    setBlockedMessage(`${name} 주소를 회원가입에서 사용할 수 없게 막았어요.`,'success');
+    await loadBlockedDomains();
+  });
+}
 
 const SITE_FONT_FILES = [
   'Paperlogy-5Medium.ttf',

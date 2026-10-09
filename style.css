@@ -147,3 +147,22 @@ input[readonly]{background:#f4fbf8;color:var(--muted);cursor:not-allowed}
 .font-status-row{display:flex;justify-content:space-between;gap:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font-size:13px}
 .font-status-row.ok b{color:#27866f}
 .font-status-row.missing b{color:#c94b61}
+
+
+/* BLOCKED SITE NAMES V1 */
+.blocked-domain-card{margin-top:22px}
+.blocked-domain-card h2{font-size:28px;margin:10px 0 12px}
+.blocked-domain-controls label{min-width:min(360px,100%)}
+.blocked-domain-list{display:grid;gap:8px;margin-top:14px}
+.blocked-domain-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 12px;border:1px solid var(--line);border-radius:13px;background:#fbfffe
+}
+.blocked-domain-item>div{display:grid;gap:2px;min-width:0}
+.blocked-domain-item b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px}
+.blocked-domain-item small{color:var(--muted);font-size:11px}
+.blocked-release-btn{padding:8px 10px;font-size:11px;flex:0 0 auto}
+.blocked-domain-empty{padding:16px;text-align:center;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:13px}
+.username-availability{display:block;min-height:16px;margin-top:-2px;font-size:12px;font-weight:800}
+.username-availability.available{color:#2d875c}
+.username-availability.blocked{color:#c53c58}

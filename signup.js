@@ -28,10 +28,49 @@ function updateSignupPreview() {
     : '주소 이름을 입력하면 내 소개 사이트 주소가 여기에 표시됩니다.';
 }
 
+const usernameAvailability = document.querySelector('#usernameAvailability');
+let availabilityTimer = null;
+let availabilityRequest = 0;
+
+function showUsernameAvailability(text,state=''){
+  if(!usernameAvailability)return;
+  usernameAvailability.className=`username-availability ${state}`.trim();
+  usernameAvailability.textContent=text||'';
+}
+
+async function checkBlockedSiteName(value,{showAvailable=true}={}){
+  const localError=validateSiteName(value);
+  if(localError){
+    showUsernameAvailability('');
+    return {blocked:false,invalid:true};
+  }
+
+  const requestId=++availabilityRequest;
+  const {data,error}=await db.rpc('is_site_name_blocked',{p_name:value});
+  if(requestId!==availabilityRequest)return {blocked:false,stale:true};
+
+  if(error){
+    showUsernameAvailability('');
+    return {blocked:false,error};
+  }
+
+  if(data===true){
+    showUsernameAvailability(`"${value}"은(는) 관리자가 사용 금지한 주소입니다.`,'blocked');
+    return {blocked:true};
+  }
+
+  if(showAvailable)showUsernameAvailability('사용 가능한 주소입니다.','available');
+  return {blocked:false};
+}
+
 document.querySelector('#username').addEventListener('input', (e) => {
   const normalized = normalizeSiteName(e.target.value);
   if (e.target.value !== normalized) e.target.value = normalized;
   updateSignupPreview();
+  clearTimeout(availabilityTimer);
+  showUsernameAvailability('');
+  if(validateSiteName(normalized))return;
+  availabilityTimer=setTimeout(()=>checkBlockedSiteName(normalized),300);
 });
 
 updateSignupPreview();
@@ -55,6 +94,18 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+
+  const blockedCheck = await checkBlockedSiteName(username,{showAvailable:false});
+  if (blockedCheck.blocked) {
+    msg.className = 'message error';
+    msg.textContent = `"${username}"은(는) 사용할 수 없는 사이트 주소 이름입니다. 다른 주소를 입력해 주세요.`;
+    return;
+  }
+  if (blockedCheck.error) {
+    msg.className = 'message error';
+    msg.textContent = '사이트 주소 사용 가능 여부를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    return;
+  }
 
   const { data: check, error: checkError } = await db.rpc('check_signup_inputs', {
     p_invite_code: invite_code,

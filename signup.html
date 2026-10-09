@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>회원가입 · mint info</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
   <main class="shell">
@@ -27,6 +27,7 @@
                  placeholder="예: mint123">
           <span class="field-help">영문 소문자/숫자/하이픈(-)만 · 3~30자 · 하이픈으로 시작/끝 금지</span>
           <span id="signupUrlPreview" class="url-preview"></span>
+          <span id="usernameAvailability" class="username-availability"></span>
         </label>
         <label>이메일<input id="email" required type="email" autocomplete="email"></label>
         <label>비밀번호<input id="password" required type="password" minlength="8" autocomplete="new-password"></label>
@@ -40,6 +41,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="signup.js"></script>
+  <script src="signup.js?v=30"></script>
 </body>
 </html>
