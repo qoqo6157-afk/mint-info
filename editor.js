@@ -72,15 +72,21 @@ const FONT_STACKS = {
 
 const CUSTOM_FONT_FILES = {
   'Paperlogy': [
-    {url:'./Paperlogy-3Light.ttf', weight:'300'},
-    {url:'./Paperlogy-5Medium.ttf', weight:'500'}
+    {file:'Paperlogy-3Light.ttf', weight:'300'},
+    {file:'Paperlogy-5Medium.ttf', weight:'500'}
   ],
-  'Jalnan2': [{url:'./Jalnan2.otf', weight:'400'}],
-  'Puzzle Sans': [{url:'./Puzzle%20Sans.ttf', weight:'400'}],
-  'Wonju': [{url:'./%EC%9B%90%EC%A3%BC%EC%B2%B4%20Regular.otf', weight:'400'}],
-  'PyeongChang Peace': [{url:'./PyeongChangPeace-Bold.otf', weight:'700'}],
-  'BM Jua': [{url:'./BMJUA_ttf.ttf', weight:'400'}]
+  'Jalnan2': [{file:'Jalnan2.otf', weight:'400'}],
+  'Puzzle Sans': [{file:'Puzzle Sans.ttf', weight:'400'}],
+  'Wonju': [{file:'원주체 Regular.otf', weight:'400'}],
+  'PyeongChang Peace': [{file:'PyeongChangPeace-Bold.otf', weight:'700'}],
+  'BM Jua': [{file:'BMJUA_ttf.ttf', weight:'400'}]
 };
+
+
+function siteFontUrl(filename){
+  const encoded=filename.split('/').map(encodeURIComponent).join('/');
+  return `${SUPABASE_URL}/storage/v1/object/public/site-fonts/${encoded}`;
+}
 
 const loadedCustomFonts = new Map();
 
@@ -90,10 +96,10 @@ async function ensureCustomFontLoaded(family){
 
   try{
     for(const item of CUSTOM_FONT_FILES[family]){
-      const testUrl=new URL(item.url,location.href);
+      const testUrl=siteFontUrl(item.file);
       const response=await fetch(testUrl,{method:'GET',cache:'no-store'});
       if(!response.ok){
-        throw new Error(`${decodeURIComponent(testUrl.pathname.split('/').pop())} (${response.status})`);
+        throw new Error(`${item.file} (${response.status})`);
       }
 
       const blob=await response.blob();
@@ -103,8 +109,7 @@ async function ensureCustomFontLoaded(family){
           weight:item.weight,
           style:'normal'
         });
-        const loaded=await face.load();
-        document.fonts.add(loaded);
+        document.fonts.add(await face.load());
       }finally{
         URL.revokeObjectURL(objectUrl);
       }
@@ -115,9 +120,7 @@ async function ensureCustomFontLoaded(family){
     console.error('Font load failed:',family,err);
     loadedCustomFonts.set(family,false);
     const status=$('#fontLoadStatus');
-    if(status){
-      status.dataset.error=String(err.message||err);
-    }
+    if(status) status.dataset.error=String(err.message||err);
     return false;
   }
 }

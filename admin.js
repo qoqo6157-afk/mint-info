@@ -130,3 +130,89 @@ createBtn.addEventListener('click', async () => {
     await loadCodes();
   }
 })();
+
+
+const SITE_FONT_FILES = [
+  'Paperlogy-5Medium.ttf',
+  'Paperlogy-3Light.ttf',
+  'Jalnan2.otf',
+  'Puzzle Sans.ttf',
+  '원주체 Regular.otf',
+  'PyeongChangPeace-Bold.otf',
+  'BMJUA_ttf.ttf'
+];
+
+const siteFontInput = document.querySelector('#siteFontInput');
+const uploadFontsBtn = document.querySelector('#uploadFontsBtn');
+const fontUploadMessage = document.querySelector('#fontUploadMessage');
+const fontStatusGrid = document.querySelector('#fontStatusGrid');
+
+function fontPublicUrl(filename){
+  const encoded = filename.split('/').map(encodeURIComponent).join('/');
+  return `${SUPABASE_URL}/storage/v1/object/public/site-fonts/${encoded}`;
+}
+
+async function renderFontStatus(){
+  if(!fontStatusGrid) return;
+  fontStatusGrid.innerHTML = '';
+
+  for(const filename of SITE_FONT_FILES){
+    let ok = false;
+    try{
+      const res = await fetch(fontPublicUrl(filename), {method:'HEAD', cache:'no-store'});
+      ok = res.ok;
+    }catch(_){}
+
+    const row = document.createElement('div');
+    row.className = `font-status-row ${ok ? 'ok' : 'missing'}`;
+    row.innerHTML = `<span>${filename}</span><b>${ok ? '업로드됨' : '없음'}</b>`;
+    fontStatusGrid.appendChild(row);
+  }
+}
+
+if(uploadFontsBtn){
+  uploadFontsBtn.addEventListener('click', async()=>{
+    if(!(await requireAdmin())) return;
+
+    const files = [...(siteFontInput.files || [])];
+    if(!files.length){
+      fontUploadMessage.className = 'message error';
+      fontUploadMessage.textContent = '폰트 파일을 먼저 선택해 주세요.';
+      return;
+    }
+
+    uploadFontsBtn.disabled = true;
+    fontUploadMessage.className = 'message';
+    fontUploadMessage.textContent = '업로드 중...';
+
+    let success = 0;
+    const failures = [];
+
+    for(const file of files){
+      const { error } = await db.storage
+        .from('site-fonts')
+        .upload(file.name, file, {
+          upsert: true,
+          contentType: file.type || undefined,
+          cacheControl: '3600'
+        });
+
+      if(error) failures.push(`${file.name}: ${error.message}`);
+      else success++;
+    }
+
+    uploadFontsBtn.disabled = false;
+
+    if(failures.length){
+      fontUploadMessage.className = 'message error';
+      fontUploadMessage.textContent = `${success}개 업로드 성공 / 실패: ${failures.join(' | ')}`;
+    }else{
+      fontUploadMessage.className = 'message success';
+      fontUploadMessage.textContent = `${success}개 폰트 업로드 완료`;
+    }
+
+    await renderFontStatus();
+  });
+}
+
+renderFontStatus();

@@ -18,21 +18,26 @@ const PUBLIC_FONT_STACKS = {
 
 const PUBLIC_CUSTOM_FONT_FILES={
   'Paperlogy':[
-    {url:'./Paperlogy-3Light.ttf',weight:'300'},
-    {url:'./Paperlogy-5Medium.ttf',weight:'500'}
+    {file:'Paperlogy-3Light.ttf',weight:'300'},
+    {file:'Paperlogy-5Medium.ttf',weight:'500'}
   ],
-  'Jalnan2':[{url:'./Jalnan2.otf',weight:'400'}],
-  'Puzzle Sans':[{url:'./Puzzle%20Sans.ttf',weight:'400'}],
-  'Wonju':[{url:'./%EC%9B%90%EC%A3%BC%EC%B2%B4%20Regular.otf',weight:'400'}],
-  'PyeongChang Peace':[{url:'./PyeongChangPeace-Bold.otf',weight:'700'}],
-  'BM Jua':[{url:'./BMJUA_ttf.ttf',weight:'400'}]
+  'Jalnan2':[{file:'Jalnan2.otf',weight:'400'}],
+  'Puzzle Sans':[{file:'Puzzle Sans.ttf',weight:'400'}],
+  'Wonju':[{file:'원주체 Regular.otf',weight:'400'}],
+  'PyeongChang Peace':[{file:'PyeongChangPeace-Bold.otf',weight:'700'}],
+  'BM Jua':[{file:'BMJUA_ttf.ttf',weight:'400'}]
 };
+
+function publicSiteFontUrl(filename){
+  const encoded=filename.split('/').map(encodeURIComponent).join('/');
+  return `${SUPABASE_URL}/storage/v1/object/public/site-fonts/${encoded}`;
+}
+
 async function preloadPublicFonts(){
   for(const [family,items] of Object.entries(PUBLIC_CUSTOM_FONT_FILES)){
     for(const item of items){
       try{
-        const url=new URL(item.url,location.href);
-        const response=await fetch(url,{cache:'force-cache'});
+        const response=await fetch(publicSiteFontUrl(item.file),{cache:'force-cache'});
         if(!response.ok) continue;
         const blob=await response.blob();
         const objectUrl=URL.createObjectURL(blob);

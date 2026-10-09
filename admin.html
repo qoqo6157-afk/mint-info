@@ -40,6 +40,19 @@
         </table>
       </div>
     </section>
+  
+    <section class="card font-admin-card">
+      <div class="eyebrow">SITE FONTS</div>
+      <h2>사이트 폰트 업로드</h2>
+      <p class="muted">GitHub가 아니라 Supabase Storage에 올립니다. 폰트 7개를 한 번만 업로드하면 에디터와 공개 페이지에서 바로 사용합니다.</p>
+
+      <input id="siteFontInput" type="file" accept=".ttf,.otf,.woff,.woff2" multiple>
+      <button id="uploadFontsBtn" class="btn primary" type="button">선택한 폰트 업로드</button>
+      <p id="fontUploadMessage" class="message"></p>
+
+      <div class="font-status-grid" id="fontStatusGrid"></div>
+    </section>
+
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

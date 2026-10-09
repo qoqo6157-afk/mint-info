@@ -203,3 +203,44 @@
 .canvas-element{touch-action:none}
 .canvas-element.selected{outline:2px solid #55cdb6;outline-offset:1px}
 .inspector[hidden],#noSelection[hidden]{display:none!important}
+
+/* V7: collapsible background-effect cards */
+details.effect-box{display:block}
+details.effect-box > summary{
+  display:flex;
+  align-items:center;
+  cursor:pointer;
+  user-select:none;
+  font-size:12px;
+  font-weight:900;
+  list-style:none;
+  margin:-2px 0 0;
+}
+details.effect-box > summary::-webkit-details-marker{display:none}
+details.effect-box > summary::after{
+  content:"⌄";
+  margin-left:auto;
+  color:#6e948c;
+  transition:transform .15s ease;
+}
+details.effect-box[open] > summary::after{transform:rotate(180deg)}
+details.effect-box[open] > summary{margin-bottom:8px}
+
+/* V7: workspace/canvas can always scroll vertically */
+.editor-layout{min-height:0}
+.editor-workspace{
+  min-height:0;
+  overflow:hidden;
+}
+.stage-viewport{
+  min-height:0 !important;
+  height:100%;
+  overflow-x:auto !important;
+  overflow-y:scroll !important;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable both-edges;
+  padding-bottom:260px !important;
+}
+.stage-scaler{
+  margin-bottom:180px;
+}
