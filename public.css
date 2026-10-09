@@ -141,3 +141,33 @@ body.public-site-body,
   78%{scale:1.03 .98}
   100%{scale:1 1}
 }
+
+
+/* SHIMEJI SOFT SQUASH HOP V4
+   Click = squash flat -> stretch up -> tiny hop -> settle in place. */
+.public-shimeji{
+  transform:
+    translate3d(var(--shimeji-x,0px),var(--shimeji-y,0px),0)
+    scaleX(var(--shimeji-face,1));
+}
+.public-shimeji.boing{
+  animation:shimejiSquashHop .36s cubic-bezier(.2,.85,.25,1);
+}
+@keyframes shimejiSquashHop{
+  0%{
+    scale:1 1;
+    transform-origin:center bottom;
+  }
+  22%{
+    scale:1.28 .68;
+  }
+  48%{
+    scale:.86 1.20;
+  }
+  68%{
+    scale:1.05 .96;
+  }
+  100%{
+    scale:1 1;
+  }
+}

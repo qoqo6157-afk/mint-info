@@ -813,7 +813,8 @@ function renderShimejiPreview(){
       sp.x+=sp.vx*dt;
       if(sp.x<0){sp.x=0;sp.vx=Math.abs(sp.vx)}
       if(sp.x>maxX){sp.x=maxX;sp.vx=-Math.abs(sp.vx)}
-      sp.el.style.transform=`translate(${sp.x}px,0) scaleX(${sp.vx<0?-1:1})`;
+      sp.el.style.setProperty('--shimeji-preview-x',`${sp.x}px`);
+      sp.el.style.setProperty('--shimeji-preview-face',String(sp.vx<0?-1:1));
     });
     shimejiPreviewAnim=requestAnimationFrame(tick);
   };

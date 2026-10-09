@@ -400,3 +400,9 @@ details.effect-box[open] > summary{margin-bottom:8px}
 .shimeji-character-actions{display:flex;gap:5px}
 .shimeji-character-actions button{flex:1;border:1px solid #cde4df;background:#fff;border-radius:8px;padding:5px 6px;font-size:10px;cursor:pointer}
 .shimeji-character-actions button:last-child{color:#c84e63}
+
+
+/* SHIMEJI PREVIEW TRANSFORM V4 */
+.shimeji-preview-sprite{
+  transform:translate3d(var(--shimeji-preview-x,0px),0,0) scaleX(var(--shimeji-preview-face,1));
+}

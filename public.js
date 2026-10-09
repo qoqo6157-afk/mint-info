@@ -330,11 +330,17 @@ function renderPublicShimeji(){
       pressX:0,pressY:0,
       ox:0,oy:0,
       lastX:0,lastY:0,lastT:0,
-      dragging:false
+      dragging:false,
+      hopT:0,
+      hopActive:false
     };
     root.appendChild(el);
 
     const boing=()=>{
+      sp.hopT=0;
+      sp.hopActive=true;
+      sp.vx=0;
+      sp.vy=0;
       el.classList.remove('boing');
       void el.offsetWidth;
       el.classList.add('boing');
@@ -401,7 +407,19 @@ function renderPublicShimeji(){
     const maxX=Math.max(0,innerWidth-size);
 
     for(const sp of sprites){
-      if(sp.pointerId===null || !sp.dragging){
+      if(sp.hopActive && sp.pointerId===null){
+        sp.hopT += dt;
+        const t=sp.hopT/360;
+        if(t>=1){
+          sp.hopActive=false;
+          sp.hopT=0;
+          sp.y=floor;
+        }else{
+          // Tiny in-place hop: rise about 14px, then settle back to the floor.
+          const hop=Math.sin(Math.PI*t)*14;
+          sp.y=floor-hop;
+        }
+      }else if(sp.pointerId===null || !sp.dragging){
         const onFloor=sp.y>=floor-.5;
         if(onFloor && Math.abs(sp.vy)<.04){
           sp.y=floor;sp.vy=0;
@@ -430,7 +448,9 @@ function renderPublicShimeji(){
       }
 
       const face=sp.vx<0?-1:1;
-      sp.el.style.transform=`translate3d(${sp.x}px,${sp.y}px,0) scaleX(${face})`;
+      sp.el.style.setProperty('--shimeji-x',`${sp.x}px`);
+      sp.el.style.setProperty('--shimeji-y',`${sp.y}px`);
+      sp.el.style.setProperty('--shimeji-face',String(face));
     }
     publicShimejiFrame=requestAnimationFrame(tick);
   };
