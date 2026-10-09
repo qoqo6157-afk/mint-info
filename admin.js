@@ -3,92 +3,130 @@ const msg = document.querySelector('#message');
 const createBtn = document.querySelector('#createBtn');
 const expiresDays = document.querySelector('#expiresDays');
 
-async function getCurrentUser() {
-  const { data: { user }, error } = await db.auth.getUser();
-  if (error || !user) {
-    location.href = 'login.html';
-    return null;
-  }
-  return user;
+let currentUser = null;
+
+function setMessage(text, type = '') {
+  msg.className = `message ${type}`.trim();
+  msg.textContent = text;
 }
 
 async function requireAdmin() {
-  const user = await getCurrentUser();
-  if (!user) return false;
+  const { data: { user }, error: userError } = await db.auth.getUser();
 
-  const { data, error } = await db.rpc('is_admin');
-
-  if (error) {
-    msg.className = 'message error';
-    msg.textContent = `관리자 권한 확인 실패: ${error.message}`;
+  if (userError || !user) {
+    location.href = 'login.html';
     return false;
   }
 
-  if (!data) {
+  currentUser = user;
+
+  const { data: adminOk, error: adminError } = await db.rpc('is_admin');
+
+  if (adminError) {
+    setMessage(`관리자 확인 실패: ${adminError.message}`, 'error');
+    return false;
+  }
+
+  if (!adminOk) {
     document.querySelector('.card').innerHTML = `
       <div class="eyebrow">ADMIN</div>
       <h1>관리자 권한이 없습니다.</h1>
-      <p class="muted">이 프로젝트의 첫 번째 가입 계정이 관리자여야 합니다.</p>
+      <p class="muted">현재 로그인 계정에 관리자 권한이 연결되지 않았습니다.</p>
       <a class="btn" href="dashboard.html">내 페이지로 돌아가기</a>
     `;
     return false;
   }
+
   return true;
 }
 
 function statusOf(row) {
   if (row.used_at) return '사용 완료';
-  if (row.expires_at && new Date(row.expires_at) < new Date()) return '만료';
+  if (row.expires_at && new Date(row.expires_at) <= new Date()) return '만료';
   return '미사용';
 }
 
 async function loadCodes() {
-  if (!(await requireAdmin())) return;
+  if (!currentUser && !(await requireAdmin())) return;
 
-  const { data, error } = await db.rpc('admin_list_invite_codes');
+  const { data, error } = await db
+    .from('invite_codes')
+    .select('code, created_at, expires_at, used_at, used_by')
+    .eq('kind', 'user')
+    .order('created_at', { ascending: false });
 
   if (error) {
-    msg.className = 'message error';
-    msg.textContent = `초대 코드 목록 로드 실패: ${error.message}`;
+    setMessage(`초대 코드 목록을 불러오지 못했습니다: ${error.message}`, 'error');
     return;
   }
 
-  codesBody.innerHTML = (data || []).map(r => `
+  codesBody.innerHTML = (data || []).map(row => `
     <tr>
-      <td class="code">${r.code}</td>
-      <td>${statusOf(r)}</td>
-      <td>${new Date(r.created_at).toLocaleString()}</td>
-      <td>${r.expires_at ? new Date(r.expires_at).toLocaleString() : '-'}</td>
-      <td>${r.used_by ? r.used_by.slice(0, 8) + '…' : '-'}</td>
+      <td class="code">${row.code}</td>
+      <td>${statusOf(row)}</td>
+      <td>${new Date(row.created_at).toLocaleString()}</td>
+      <td>${row.expires_at ? new Date(row.expires_at).toLocaleString() : '-'}</td>
+      <td>${row.used_by ? row.used_by.slice(0, 8) + '…' : '-'}</td>
     </tr>
   `).join('');
 }
 
+function makeInviteCode() {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return 'MINT-' + [...bytes]
+    .map(v => v.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
+async function insertInviteCode(days) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = makeInviteCode();
+    const expiresAt = days == null
+      ? null
+      : new Date(Date.now() + days * 86400000).toISOString();
+
+    const { error } = await db.from('invite_codes').insert({
+      code,
+      kind: 'user',
+      created_by: currentUser.id,
+      expires_at: expiresAt
+    });
+
+    if (!error) return code;
+
+    // Extremely unlikely random collision: just retry.
+    if (error.code === '23505') continue;
+
+    throw error;
+  }
+
+  throw new Error('초대 코드 생성에 반복적으로 실패했습니다.');
+}
+
 createBtn.addEventListener('click', async () => {
+  if (!currentUser && !(await requireAdmin())) return;
+
   createBtn.disabled = true;
-  msg.className = 'message';
-  msg.textContent = '코드 발급 중...';
+  setMessage('코드 발급 중...');
 
   try {
     const raw = expiresDays.value;
     const days = raw === '' ? null : Number(raw);
+    const code = await insertInviteCode(days);
 
-    const { data, error } = await db.rpc('create_invite_code', {
-      p_expires_days: days
-    });
-
-    if (error) {
-      msg.className = 'message error';
-      msg.textContent = `코드 발급 실패: ${error.message}`;
-      return;
-    }
-
-    msg.className = 'message success';
-    msg.textContent = `새 초대 코드: ${data}`;
+    setMessage(`새 초대 코드: ${code}`, 'success');
     await loadCodes();
+  } catch (error) {
+    setMessage(`코드 발급 실패: ${error.message || error}`, 'error');
   } finally {
     createBtn.disabled = false;
   }
 });
 
-loadCodes();
+(async () => {
+  if (await requireAdmin()) {
+    await loadCodes();
+  }
+})();
