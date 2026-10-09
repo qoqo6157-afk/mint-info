@@ -539,16 +539,72 @@ function renderElements(){
   });
 }
 
+function normalizeLayerZ(){
+  const ordered=[...config.elements].sort((a,b)=>(a.z||0)-(b.z||0));
+  ordered.forEach((el,i)=>el.z=i+1);
+}
+function moveLayerByDrop(dragId,targetId,before=true){
+  if(dragId===targetId)return;
+  const visual=[...config.elements].sort((a,b)=>(b.z||0)-(a.z||0));
+  const from=visual.findIndex(e=>e.id===dragId);
+  const to=visual.findIndex(e=>e.id===targetId);
+  if(from<0||to<0)return;
+  snapshot();
+  const [moved]=visual.splice(from,1);
+  let insertAt=visual.findIndex(e=>e.id===targetId);
+  if(insertAt<0)insertAt=visual.length;
+  if(!before)insertAt+=1;
+  visual.splice(insertAt,0,moved);
+  // visual is top -> bottom, so assign higher z to earlier rows.
+  const max=visual.length;
+  visual.forEach((el,i)=>{el.z=max-i});
+  renderElements();
+  renderLayers();
+  markDirty();
+}
 function renderLayers(){
   layerList.innerHTML='';
   [...config.elements].sort((a,b)=>(b.z||0)-(a.z||0)).forEach(el=>{
-    const row=document.createElement('div');row.className=`layer-row ${selectedId===el.id?'active':''}`;
-    row.innerHTML=`<button title="잠금">${el.locked?'🔒':'◻'}</button><div class="layer-name"></div><button title="표시">${el.hidden?'🙈':'👁'}</button><button title="삭제">×</button>`;
-    row.children[1].textContent=el.name;
-    row.children[0].onclick=()=>{snapshot();el.locked=!el.locked;renderAll()};
-    row.children[1].onclick=()=>selectElement(el.id);
-    row.children[2].onclick=()=>{snapshot();el.hidden=!el.hidden;renderAll()};
-    row.children[3].onclick=()=>deleteElement(el.id);
+    const row=document.createElement('div');
+    row.className=`layer-row ${selectedId===el.id?'active':''}`;
+    row.draggable=true;
+    row.dataset.id=el.id;
+    row.innerHTML=`<span class="layer-drag-handle" title="드래그해서 순서 변경">☰</span><button title="잠금">${el.locked?'🔒':'◻'}</button><div class="layer-name"></div><button title="표시">${el.hidden?'🙈':'👁'}</button><button title="삭제">×</button>`;
+    row.children[2].textContent=el.name;
+
+    row.children[1].onclick=()=>{snapshot();el.locked=!el.locked;renderAll()};
+    row.children[2].onclick=()=>selectElement(el.id);
+    row.children[3].onclick=()=>{snapshot();el.hidden=!el.hidden;renderAll()};
+    row.children[4].onclick=()=>deleteElement(el.id);
+
+    row.addEventListener('dragstart',e=>{
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',el.id);
+      row.classList.add('dragging');
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('dragging');
+      layerList.querySelectorAll('.drop-before,.drop-after').forEach(n=>n.classList.remove('drop-before','drop-after'));
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      const r=row.getBoundingClientRect();
+      const before=e.clientY < r.top+r.height/2;
+      row.classList.toggle('drop-before',before);
+      row.classList.toggle('drop-after',!before);
+      e.dataTransfer.dropEffect='move';
+    });
+    row.addEventListener('dragleave',()=>{
+      row.classList.remove('drop-before','drop-after');
+    });
+    row.addEventListener('drop',e=>{
+      e.preventDefault();
+      const dragId=e.dataTransfer.getData('text/plain');
+      const r=row.getBoundingClientRect();
+      const before=e.clientY < r.top+r.height/2;
+      row.classList.remove('drop-before','drop-after');
+      moveLayerByDrop(dragId,el.id,before);
+    });
     layerList.appendChild(row);
   });
 }
@@ -805,6 +861,7 @@ function renderInspectorCore(){
     $('#shapeFontSize').value=shapeTextStyleOf(el).fontSize;
   }
   if(el.type==='image'||el.type==='sticker'){
+    $('#replaceImageBtn').textContent=el.type==='sticker'?'스티커 사진 바꾸기':'사진 바꾸기';
     $('#imageFit').value=el.props.fit||'cover';
     const ip=imagePositionOf(el);
     $('#imagePosX').value=ip.x;$('#imagePosY').value=ip.y;
@@ -1335,6 +1392,33 @@ $('#siteBannerInput').onchange=async e=>{
 };
 ['siteTitle','siteDescription'].forEach(id=>$('#'+id).addEventListener('input',markDirty));
 
+
+
+$('#replaceImageBtn').onclick=()=>{
+  const el=selected();
+  if(!el||!(el.type==='image'||el.type==='sticker'))return;
+  const input=$('#replaceImageInput');
+  input.accept=el.type==='sticker'?'image/png,.png,image/gif,.gif':'image/*,.gif';
+  input.click();
+};
+$('#replaceImageInput').onchange=async e=>{
+  const el=selected();
+  const f=e.target.files?.[0];
+  if(!el||!f||!(el.type==='image'||el.type==='sticker')){e.target.value='';return;}
+  try{
+    toast('사진 바꾸는 중…');
+    const url=await uploadAsset(f);
+    snapshot();
+    el.props.src=url;
+    // Keep existing box size/position/rotation; only replace the actual image.
+    if(el.type==='sticker' && !el.props.fit)el.props.fit='contain';
+    renderElements();
+    renderInspector();
+    markDirty();
+    toast(el.type==='sticker'?'스티커 사진을 바꿨어요':'사진을 바꿨어요');
+  }catch(err){toast(err.message,true)}
+  e.target.value='';
+};
 
 // mode / zoom / global events
 $('#desktopModeBtn').onclick=()=>switchMode('desktop');$('#mobileModeBtn').onclick=()=>switchMode('mobile');
