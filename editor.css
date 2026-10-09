@@ -198,3 +198,8 @@
 }
 .font-load-status.ok{color:#30937f}
 .font-load-status.error{color:#d34a61}
+
+/* V6: selection/inspector robustness */
+.canvas-element{touch-action:none}
+.canvas-element.selected{outline:2px solid #55cdb6;outline-offset:1px}
+.inspector[hidden],#noSelection[hidden]{display:none!important}

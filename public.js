@@ -31,9 +31,20 @@ async function preloadPublicFonts(){
   for(const [family,items] of Object.entries(PUBLIC_CUSTOM_FONT_FILES)){
     for(const item of items){
       try{
-        const face=new FontFace(family,`url("${item.url}")`,{weight:item.weight,style:'normal'});
-        document.fonts.add(await face.load());
-      }catch(err){ console.error('Public font failed',family,err); }
+        const url=new URL(item.url,location.href);
+        const response=await fetch(url,{cache:'force-cache'});
+        if(!response.ok) continue;
+        const blob=await response.blob();
+        const objectUrl=URL.createObjectURL(blob);
+        try{
+          const face=new FontFace(family,`url("${objectUrl}")`,{weight:item.weight,style:'normal'});
+          document.fonts.add(await face.load());
+        }finally{
+          URL.revokeObjectURL(objectUrl);
+        }
+      }catch(err){
+        console.error('Public font failed',family,err);
+      }
     }
   }
 }

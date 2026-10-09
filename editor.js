@@ -86,22 +86,38 @@ const loadedCustomFonts = new Map();
 
 async function ensureCustomFontLoaded(family){
   if(!CUSTOM_FONT_FILES[family]) return true;
-  if(loadedCustomFonts.get(family) === true) return true;
+  if(loadedCustomFonts.get(family)===true) return true;
 
   try{
     for(const item of CUSTOM_FONT_FILES[family]){
-      const face = new FontFace(family, `url("${item.url}")`, {
-        weight:item.weight,
-        style:'normal'
-      });
-      const loaded = await face.load();
-      document.fonts.add(loaded);
+      const testUrl=new URL(item.url,location.href);
+      const response=await fetch(testUrl,{method:'GET',cache:'no-store'});
+      if(!response.ok){
+        throw new Error(`${decodeURIComponent(testUrl.pathname.split('/').pop())} (${response.status})`);
+      }
+
+      const blob=await response.blob();
+      const objectUrl=URL.createObjectURL(blob);
+      try{
+        const face=new FontFace(family,`url("${objectUrl}")`,{
+          weight:item.weight,
+          style:'normal'
+        });
+        const loaded=await face.load();
+        document.fonts.add(loaded);
+      }finally{
+        URL.revokeObjectURL(objectUrl);
+      }
     }
     loadedCustomFonts.set(family,true);
     return true;
   }catch(err){
-    console.error('Font load failed:', family, err);
+    console.error('Font load failed:',family,err);
     loadedCustomFonts.set(family,false);
+    const status=$('#fontLoadStatus');
+    if(status){
+      status.dataset.error=String(err.message||err);
+    }
     return false;
   }
 }
@@ -139,7 +155,7 @@ function cssFontFamily(value){
   return FONT_STACKS[key] || key || FONT_STACKS['system-ui'];
 }
 
-function warmCustomFonts(){ preloadCustomFonts(); }
+function warmCustomFonts(){}
 
 function ensureCanvasHeightForElement(el, margin=120){
   const l=layoutOf(el);
@@ -290,9 +306,12 @@ function renderElements(){
     applyAnimationVars(node,el);
     node.appendChild(buildContent(el));
     const handle=document.createElement('div');handle.className='resize-handle';node.appendChild(handle);
-    node.addEventListener('pointerdown', e=>beginDrag(e,el,node));
+    node.addEventListener('pointerdown', e=>{
+      e.stopPropagation();
+      selectElementForPointer(el.id,node);
+      beginDrag(e,el,node);
+    });
     handle.addEventListener('pointerdown', e=>beginResize(e,el,node));
-    node.addEventListener('click', e=>{e.stopPropagation();selectElement(el.id)});
     elementsLayer.appendChild(node);
   });
 }
@@ -311,10 +330,16 @@ function renderLayers(){
   });
 }
 
-function selectElement(id){selectedId=id;renderElements();renderLayers();renderInspector()}
+function selectElement(id){
+  selectedId=id;
+  elementsLayer.querySelectorAll('.canvas-element').forEach(n=>{
+    n.classList.toggle('selected', n.dataset.id===id);
+  });
+  renderLayers();
+  renderInspector();
+}
 
 function selectElementForPointer(id,node){
-  if(selectedId===id) return;
   selectedId=id;
   elementsLayer.querySelectorAll('.canvas-element.selected').forEach(n=>n.classList.remove('selected'));
   node.classList.add('selected');
@@ -328,7 +353,6 @@ function beginDrag(e,el,node){
   e.stopPropagation();
   e.preventDefault();
 
-  selectElementForPointer(el.id,node);
   if(el.locked) return;
 
   const l=layoutOf(el);
@@ -472,7 +496,7 @@ function renderCanvasSize(){
 function renderEffects(){MintEffects.render(fxLayer,config.effects)}
 function renderAll(){renderCanvasSize();applyBackground();renderElements();renderLayers();renderInspector();syncPageControls();renderEffects()}
 
-function renderInspector(){
+function renderInspectorCore(){
   const el=selected(); const has=!!el; noSelection.hidden=has; inspector.hidden=!has; if(!has)return;
   $('#elName').value=el.name||'';const l=layoutOf(el);$('#elX').value=l.x;$('#elY').value=l.y;$('#elW').value=l.w;$('#elH').value=l.h;
   $('#rotation').value=el.rotation||0;$('#rotationV').textContent=`${el.rotation||0}°`;$('#opacity').value=el.opacity??1;$('#opacityV').textContent=`${Math.round((el.opacity??1)*100)}%`;$('#borderRadius').value=el.borderRadius||0;$('#radiusV').textContent=`${el.borderRadius||0}px`;
@@ -493,6 +517,21 @@ function renderInspector(){
   const a=el.animation||{};$('#animType').value=a.type||'none';$('#animSpeed').value=a.speed||3;$('#animSpeedV').textContent=`${a.speed||3}s`;$('#animIntensity').value=a.intensity||12;$('#animIntensityV').textContent=a.intensity||12;$('#animDelay').value=a.delay||0;$('#animDelayV').textContent=`${a.delay||0}s`;$('#animLoop').checked=a.loop!==false;
 }
 function normalizeColor(v,fallback){return /^#[0-9a-f]{6}$/i.test(v||'')?v:fallback}
+
+function renderInspector(){
+  try{
+    renderInspectorCore();
+  }catch(err){
+    console.error('Inspector render error:',err);
+    const el=selected();
+    noSelection.hidden=!!el;
+    inspector.hidden=!el;
+    if(el){
+      toast(`설정창 오류: ${err.message}`,true);
+    }
+  }
+}
+
 function syncPositionFields(){const el=selected();if(!el)return;const l=layoutOf(el);$('#elX').value=l.x;$('#elY').value=l.y;$('#elW').value=l.w;$('#elH').value=l.h;}
 
 function bindInspector(){
@@ -527,7 +566,8 @@ function bindInspector(){
       setFontStatus('폰트 불러오는 중…');
       const ok=await ensureCustomFontLoaded(family);
       if(!ok){
-        setFontStatus('폰트 파일을 찾지 못했어요. GitHub 루트의 파일명을 확인해 주세요.','error');
+        const extra=$('#fontLoadStatus')?.dataset.error||'';
+        setFontStatus(`폰트 파일을 못 불러왔어요${extra?` · ${extra}`:''}`,'error');
       }else{
         setFontStatus('폰트 적용됨','ok');
       }
@@ -636,7 +676,13 @@ function seedDefaultElements(){const t=baseElement('text');t.name='닉네임';t.
 $('#desktopModeBtn').onclick=()=>switchMode('desktop');$('#mobileModeBtn').onclick=()=>switchMode('mobile');
 function switchMode(m){mode=m;$('#desktopModeBtn').classList.toggle('active',m==='desktop');$('#mobileModeBtn').classList.toggle('active',m==='mobile');zoom=m==='mobile'?.85:.70;$('#zoomRange').value=Math.round(zoom*100);$('#zoomText').textContent=Math.round(zoom*100)+'%';renderAll()}
 $('#zoomRange').oninput=e=>{zoom=+e.target.value/100;$('#zoomText').textContent=e.target.value+'%';renderCanvasSize()};
-$('#pageCanvas').addEventListener('click',()=>{selectedId=null;renderElements();renderLayers();renderInspector()});
+$('#pageCanvas').addEventListener('pointerdown',e=>{
+  if(e.target!==canvas && e.target!==elementsLayer && !e.target.classList.contains('fx-layer')) return;
+  selectedId=null;
+  elementsLayer.querySelectorAll('.canvas-element.selected').forEach(n=>n.classList.remove('selected'));
+  renderLayers();
+  renderInspector();
+});
 $$('[data-add]').forEach(b=>b.onclick=()=>addElement(b.dataset.add));
 $('#assetInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const url=await uploadAsset(f);snapshot();const el=baseElement(uploadingKind||'image');el.props={src:url,fit:uploadingKind==='sticker'?'contain':'cover'};if(uploadingKind==='sticker'){el.layout=defaultLayout(180,150,180,180);el.borderRadius=0;}config.elements.push(el);selectedId=el.id;renderAll();toast('업로드 완료')}catch(err){toast(err.message,true)}e.target.value=''};
 $('#saveBtn').onclick=()=>saveAll(false);$('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;
