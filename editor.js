@@ -56,6 +56,71 @@ function clamp(n,min,max){ return Math.min(max, Math.max(min,n)); }
 function selected(){ return config.elements.find(e => e.id === selectedId) || null; }
 function layoutOf(el){ return el.layout[mode]; }
 
+const FONT_STACKS = {
+  'system-ui': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  'Paperlogy': '"Paperlogy", sans-serif',
+  'Jalnan2': '"Jalnan2", sans-serif',
+  'Puzzle Sans': '"Puzzle Sans", sans-serif',
+  'Wonju': '"Wonju", sans-serif',
+  'PyeongChang Peace': '"PyeongChang Peace", sans-serif',
+  'BM Jua': '"BM Jua", sans-serif',
+  'Arial': 'Arial, sans-serif',
+  'Georgia': 'Georgia, serif',
+  'Courier New': '"Courier New", monospace',
+  'Times New Roman': '"Times New Roman", serif'
+};
+
+function normalizeFontFamily(value){
+  const v = String(value || 'system-ui').trim();
+  const legacy = {
+    "'Paperlogy', sans-serif": 'Paperlogy',
+    "'Jalnan2', sans-serif": 'Jalnan2',
+    "'Puzzle Sans', sans-serif": 'Puzzle Sans',
+    "'Wonju', sans-serif": 'Wonju',
+    "'PyeongChang Peace', sans-serif": 'PyeongChang Peace',
+    "'BM Jua', sans-serif": 'BM Jua',
+    "'Arial',sans-serif": 'Arial',
+    "'Georgia',serif": 'Georgia',
+    "'Courier New',monospace": 'Courier New',
+    "'Times New Roman',serif": 'Times New Roman'
+  };
+  return legacy[v] || v;
+}
+
+function cssFontFamily(value){
+  const key = normalizeFontFamily(value);
+  return FONT_STACKS[key] || key || FONT_STACKS['system-ui'];
+}
+
+function warmCustomFonts(){
+  if(!document.fonts) return;
+  ['Paperlogy','Jalnan2','Puzzle Sans','Wonju','PyeongChang Peace','BM Jua']
+    .forEach(name => document.fonts.load(`24px "${name}"`).catch(()=>{}));
+}
+
+function ensureCanvasHeightForElement(el, margin=120){
+  const l = layoutOf(el);
+  const c = config.canvas[mode];
+  const wanted = Math.ceil((l.y + l.h + margin) / 50) * 50;
+  if(wanted > c.height){
+    c.height = wanted;
+    canvas.style.height = c.height + 'px';
+    stageScaler.style.height = c.height + 'px';
+    $('#canvasSizeText').textContent = `${c.width} × ${c.height}`;
+    renderEffects();
+  }
+}
+
+function autoScrollWorkspace(clientY){
+  const rect = stageViewport.getBoundingClientRect();
+  const edge = 70;
+  if(clientY > rect.bottom - edge){
+    stageViewport.scrollTop += 24;
+  } else if(clientY < rect.top + edge){
+    stageViewport.scrollTop = Math.max(0, stageViewport.scrollTop - 24);
+  }
+}
+
 function defaultLayout(x=120,y=100,w=260,h=100){
   return {
     desktop:{x,y,w,h},
@@ -74,7 +139,7 @@ function baseElement(type) {
     props: {}
   };
   if (type === 'text') {
-    common.props = { text:'새 텍스트', fontFamily:'system-ui', fontSize:36, fontWeight:'800', color:'#173b35', background:'#ffffff', align:'left', letterSpacing:0, lineHeight:1.25, textShadow:false, textStroke:0 };
+    common.props = { text:'새 텍스트', fontFamily:'system-ui', fontSize:36, fontWeight:'800', color:'#173b35', background:'transparent', align:'left', letterSpacing:0, lineHeight:1.25, textShadow:false, textStroke:0 };
     common.layout = defaultLayout(140,120,320,120);
   } else if (type === 'button') {
     common.props = { text:'MY LINK', url:'https://', bg:'#56cfb8', color:'#ffffff' };
@@ -152,8 +217,8 @@ function buildContent(el){
     wrap.classList.add('text-content');
     wrap.textContent = el.props.text || '';
     Object.assign(wrap.style, {
-      fontFamily:el.props.fontFamily || 'system-ui', fontSize:`${el.props.fontSize||32}px`, fontWeight:el.props.fontWeight||'800',
-      color:el.props.color||'#111', background:el.props.background||'transparent', textAlign:el.props.align||'left',
+      fontFamily:cssFontFamily(el.props.fontFamily), fontSize:`${el.props.fontSize||32}px`, fontWeight:el.props.fontWeight||'800',
+      color:el.props.color||'#111', background:'transparent', textAlign:el.props.align||'left',
       letterSpacing:`${el.props.letterSpacing||0}px`, lineHeight:String(el.props.lineHeight||1.2),
       display:'flex', alignItems:'center', padding:'8px',
       textShadow:el.props.textShadow ? '0 3px 10px rgba(0,0,0,.22)' : 'none',
@@ -215,22 +280,23 @@ function beginDrag(e,el,node){
   const l=layoutOf(el), startX=e.clientX,startY=e.clientY, ox=l.x,oy=l.y;
   const scale=zoom;
   snapshot();
-  const move=ev=>{l.x=Math.round(ox+(ev.clientX-startX)/scale);l.y=Math.round(oy+(ev.clientY-startY)/scale);node.style.left=l.x+'px';node.style.top=l.y+'px';syncPositionFields();};
+  const move=ev=>{l.x=Math.round(ox+(ev.clientX-startX)/scale);l.y=Math.round(oy+(ev.clientY-startY)/scale);node.style.left=l.x+'px';node.style.top=l.y+'px';ensureCanvasHeightForElement(el);autoScrollWorkspace(ev.clientY);syncPositionFields();};
   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);renderLayers();markDirty();};
   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
 }
 function beginResize(e,el,node){
   e.stopPropagation();e.preventDefault();if(el.locked)return;
   const l=layoutOf(el), startX=e.clientX,startY=e.clientY,ow=l.w,oh=l.h;const scale=zoom;snapshot();
-  const move=ev=>{l.w=Math.max(20,Math.round(ow+(ev.clientX-startX)/scale));l.h=Math.max(20,Math.round(oh+(ev.clientY-startY)/scale));node.style.width=l.w+'px';node.style.height=l.h+'px';syncPositionFields();};
+  const move=ev=>{l.w=Math.max(20,Math.round(ow+(ev.clientX-startX)/scale));l.h=Math.max(20,Math.round(oh+(ev.clientY-startY)/scale));node.style.width=l.w+'px';node.style.height=l.h+'px';ensureCanvasHeightForElement(el);autoScrollWorkspace(ev.clientY);syncPositionFields();};
   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);markDirty()};
   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
 }
 
 function renderCanvasSize(){
+  stageViewport.style.width = '';
+  stageViewport.style.height = '';
   const c=config.canvas[mode]; canvas.style.width=c.width+'px';canvas.style.height=c.height+'px';stageScaler.style.width=c.width+'px';stageScaler.style.height=c.height+'px';stageScaler.style.transform=`scale(${zoom})`;
   $('#modeLabel').textContent=mode==='desktop'?'PC 캔버스':'MOBILE 캔버스';$('#canvasSizeText').textContent=`${c.width} × ${c.height}`;
-  stageScaler.parentElement.style.width=(c.width*zoom)+'px';stageScaler.parentElement.style.height=(c.height*zoom)+'px';
 }
 function renderEffects(){MintEffects.render(fxLayer,config.effects)}
 function renderAll(){renderCanvasSize();applyBackground();renderElements();renderLayers();renderInspector();syncPageControls();renderEffects()}
@@ -241,7 +307,7 @@ function renderInspector(){
   $('#rotation').value=el.rotation||0;$('#rotationV').textContent=`${el.rotation||0}°`;$('#opacity').value=el.opacity??1;$('#opacityV').textContent=`${Math.round((el.opacity??1)*100)}%`;$('#borderRadius').value=el.borderRadius||0;$('#radiusV').textContent=`${el.borderRadius||0}px`;$('#boxShadow').checked=!!el.boxShadow;
   $('#lockBtn').textContent=el.locked?'잠금 해제':'잠금';$('#hideBtn').textContent=el.hidden?'표시':'숨김';
   $('#textControls').hidden=el.type!=='text';$('#buttonControls').hidden=el.type!=='button';$('#shapeControls').hidden=el.type!=='shape';$('#imageControls').hidden=!(el.type==='image'||el.type==='sticker');
-  if(el.type==='text'){$('#textValue').value=el.props.text||'';$('#fontFamily').value=el.props.fontFamily||'system-ui';$('#fontSize').value=el.props.fontSize||32;$('#fontWeight').value=el.props.fontWeight||'800';$('#textColor').value=el.props.color||'#173b35';$('#textBgColor').value=normalizeColor(el.props.background,'#ffffff');$('#textAlign').value=el.props.align||'left';$('#letterSpacing').value=el.props.letterSpacing||0;$('#lineHeight').value=el.props.lineHeight||1.2;$('#textShadow').checked=!!el.props.textShadow;$('#textStroke').value=el.props.textStroke||0;}
+  if(el.type==='text'){$('#textValue').value=el.props.text||'';$('#fontFamily').value=normalizeFontFamily(el.props.fontFamily);$('#fontSize').value=el.props.fontSize||32;$('#fontWeight').value=el.props.fontWeight||'800';$('#textColor').value=el.props.color||'#173b35';$('#textAlign').value=el.props.align||'left';$('#letterSpacing').value=el.props.letterSpacing||0;$('#lineHeight').value=el.props.lineHeight||1.2;$('#textShadow').checked=!!el.props.textShadow;$('#textStroke').value=el.props.textStroke||0;}
   if(el.type==='button'){$('#buttonText').value=el.props.text||'';$('#buttonUrl').value=el.props.url||'';$('#buttonBg').value=el.props.bg||'#56cfb8';$('#buttonColor').value=el.props.color||'#ffffff';}
   if(el.type==='shape'){$('#shapeFill').value=el.props.fill||'#ffffff';$('#shapeBorder').value=el.props.border||'#9adfce';$('#shapeBorderWidth').value=el.props.borderWidth||0;}
   if(el.type==='image'||el.type==='sticker') $('#imageFit').value=el.props.fit||'cover';
@@ -258,9 +324,17 @@ function bindInspector(){
     if(id==='elName')el.name=$('#elName').value;if(id==='elX')l.x=+$(`#${id}`).value;if(id==='elY')l.y=+$(`#${id}`).value;if(id==='elW')l.w=Math.max(20,+$(`#${id}`).value);if(id==='elH')l.h=Math.max(20,+$(`#${id}`).value);if(id==='rotation')el.rotation=+$(`#${id}`).value;if(id==='opacity')el.opacity=+$(`#${id}`).value;if(id==='borderRadius')el.borderRadius=+$(`#${id}`).value;if(id==='boxShadow')el.boxShadow=$('#boxShadow').checked;
     renderElements();renderLayers();markDirty();renderInspector();
   }));
-  const map={textValue:['text','text'],fontFamily:['text','fontFamily'],fontSize:['text','fontSize'],fontWeight:['text','fontWeight'],textColor:['text','color'],textBgColor:['text','background'],textAlign:['text','align'],letterSpacing:['text','letterSpacing'],lineHeight:['text','lineHeight'],textShadow:['text','textShadow'],textStroke:['text','textStroke'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
+  const map={textValue:['text','text'],fontFamily:['text','fontFamily'],fontSize:['text','fontSize'],fontWeight:['text','fontWeight'],textColor:['text','color'],textAlign:['text','align'],letterSpacing:['text','letterSpacing'],lineHeight:['text','lineHeight'],textShadow:['text','textShadow'],textStroke:['text','textStroke'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
   Object.entries(map).forEach(([id])=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el)return;snapshot();let v=$('#'+id).type==='checkbox'?$('#'+id).checked:$('#'+id).value;if(['fontSize','letterSpacing','lineHeight','textStroke','shapeBorderWidth'].includes(id))v=+v;el.props[map[id][1]]=v;renderElements();markDirty()}));
-  ['animType','animSpeed','animIntensity','animDelay','animLoop'].forEach(id=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el)return;snapshot();const a=el.animation||(el.animation={});if(id==='animType')a.type=$('#animType').value;if(id==='animSpeed')a.speed=+$('#animSpeed').value;if(id==='animIntensity')a.intensity=+$('#animIntensity').value;if(id==='animDelay')a.delay=+$('#animDelay').value;if(id==='animLoop')a.loop=$('#animLoop').checked;renderElements();renderInspector();markDirty()}));
+
+  $('#fontFamily').addEventListener('change',()=>{
+    const el=selected(); if(!el || el.type!=='text') return;
+    snapshot();
+    el.props.fontFamily=normalizeFontFamily($('#fontFamily').value);
+    renderElements();
+    markDirty();
+  });
+    ['animType','animSpeed','animIntensity','animDelay','animLoop'].forEach(id=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el)return;snapshot();const a=el.animation||(el.animation={});if(id==='animType')a.type=$('#animType').value;if(id==='animSpeed')a.speed=+$('#animSpeed').value;if(id==='animIntensity')a.intensity=+$('#animIntensity').value;if(id==='animDelay')a.delay=+$('#animDelay').value;if(id==='animLoop')a.loop=$('#animLoop').checked;renderElements();renderInspector();markDirty()}));
   $('#duplicateBtn').onclick=()=>{const el=selected();if(!el)return;snapshot();const n=clone(el);n.id=uid();n.name=el.name+' 복사';n.layout.desktop.x+=20;n.layout.desktop.y+=20;n.layout.mobile.x+=12;n.layout.mobile.y+=12;n.z=Math.max(0,...config.elements.map(x=>x.z||0))+1;config.elements.push(n);selectedId=n.id;renderAll()};
   $('#deleteBtn').onclick=()=>selectedId&&deleteElement(selectedId);
   $('#lockBtn').onclick=()=>{const el=selected();if(!el)return;snapshot();el.locked=!el.locked;renderAll()};
@@ -281,7 +355,16 @@ function bindPageControls(){
   const defs={snow:['Enabled','Count','Speed','Size','Drift'],petal:['Enabled','Count','Speed','Size','Drift','Spin'],rain:['Enabled','Count','Speed','Length','Angle'],sparkle:['Enabled','Count','Interval','Duration','Size']};
   Object.entries(defs).forEach(([k,props])=>props.forEach(cap=>{const id=k+cap;$('#'+id).addEventListener('input',()=>{snapshot();const prop=cap[0].toLowerCase()+cap.slice(1);const inp=$('#'+id);config.effects[k][prop]=inp.type==='checkbox'?inp.checked:+inp.value;syncPageControls();renderEffects();markDirty()})}));
   $('#bgImageBtn').onclick=()=>$('#bgImageInput').click();
-  $('#bgImageInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const url=await uploadAsset(f);snapshot();config.background.image=url;config.background.type='image';renderAll();toast('배경 이미지 업로드 완료')}catch(err){toast(err.message,true)}e.target.value=''};
+
+  $('#bgImageRemoveBtn').onclick=()=>{
+    snapshot();
+    config.background.image='';
+    if(config.background.type==='image') config.background.type='color';
+    renderAll();
+    markDirty();
+    toast('배경 이미지를 제거했어요');
+  };
+    $('#bgImageInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const url=await uploadAsset(f);snapshot();config.background.image=url;config.background.type='image';renderAll();toast('배경 이미지 업로드 완료')}catch(err){toast(err.message,true)}e.target.value=''};
 }
 
 async function uploadAsset(file){
@@ -317,7 +400,27 @@ async function loadData(){
   if(!error&&pc?.content){config=mergeConfig(pc.content);pageRowExists=true}else{config=clone(DEFAULT_CONFIG);seedDefaultElements();}
   renderAll();
 }
-function mergeConfig(c){const n=clone(DEFAULT_CONFIG);Object.assign(n,c);n.canvas={...n.canvas,...(c.canvas||{})};n.background={...n.background,...(c.background||{})};n.effects={snow:{...n.effects.snow,...(c.effects?.snow||{})},petal:{...n.effects.petal,...(c.effects?.petal||{})},rain:{...n.effects.rain,...(c.effects?.rain||{})},sparkle:{...n.effects.sparkle,...(c.effects?.sparkle||{})}};n.elements=Array.isArray(c.elements)?c.elements:[];return n}
+function mergeConfig(c){
+  const n=clone(DEFAULT_CONFIG);
+  Object.assign(n,c);
+  n.canvas={...n.canvas,...(c.canvas||{})};
+  n.background={...n.background,...(c.background||{})};
+  n.effects={
+    snow:{...n.effects.snow,...(c.effects?.snow||{})},
+    petal:{...n.effects.petal,...(c.effects?.petal||{})},
+    rain:{...n.effects.rain,...(c.effects?.rain||{})},
+    sparkle:{...n.effects.sparkle,...(c.effects?.sparkle||{})}
+  };
+  n.elements=Array.isArray(c.elements)?c.elements:[];
+  n.elements.forEach(el=>{
+    if(el.type==='text'){
+      el.props=el.props||{};
+      el.props.fontFamily=normalizeFontFamily(el.props.fontFamily);
+      el.props.background='transparent';
+    }
+  });
+  return n;
+}
 function seedDefaultElements(){const t=baseElement('text');t.name='닉네임';t.props.text=profile.nickname||'MY PAGE';t.props.fontSize=54;t.layout.desktop={x:110,y:110,w:520,h:100};t.layout.mobile={x:30,y:80,w:330,h:90};const b=baseElement('text');b.name='소개';b.props.text=profile.bio||'나만의 페이지를 꾸며보세요.';b.props.fontSize=20;b.props.fontWeight='500';b.layout.desktop={x:115,y:225,w:500,h:140};b.layout.mobile={x:30,y:190,w:330,h:150};config.elements=[t,b];}
 
 // mode / zoom / global events
@@ -332,4 +435,4 @@ $('#logoutBtn').onclick=async()=>{await db.auth.signOut();location.href='index.h
 $('#profileNickname').addEventListener('input',markDirty);$('#profileBio').addEventListener('input',markDirty);
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo()}if(e.key==='Delete'&&selectedId&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName))deleteElement(selectedId)});
 
-bindInspector();bindPageControls();loadData();
+warmCustomFonts();bindInspector();bindPageControls();loadData();

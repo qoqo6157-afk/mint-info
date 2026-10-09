@@ -65,7 +65,10 @@
           <label class="editor-field">그라데이션 각도 <span id="bgAngleValue" class="field-value"></span>
             <input id="bgAngle" type="range" min="0" max="360" step="1">
           </label>
-          <button id="bgImageBtn" class="btn small-btn" type="button">배경 이미지 업로드</button>
+          <div class="bg-image-actions">
+            <button id="bgImageBtn" class="btn small-btn" type="button">배경 이미지 업로드</button>
+            <button id="bgImageRemoveBtn" class="btn small-btn danger-outline" type="button">배경 이미지 제거</button>
+          </div>
           <input id="bgImageInput" type="file" accept="image/*,.gif" hidden>
           <label class="editor-field">배경 맞춤
             <select id="bgFit">
@@ -157,31 +160,28 @@
                 <select id="fontFamily">
                   <option value="system-ui">기본</option>
                   <optgroup label="내 폰트">
-                    <option value="'Paperlogy', sans-serif">Paperlogy</option>
-                    <option value="'Jalnan2', sans-serif">잘난체2</option>
-                    <option value="'Puzzle Sans', sans-serif">Puzzle Sans</option>
-                    <option value="'Wonju', sans-serif">원주체</option>
-                    <option value="'PyeongChang Peace', sans-serif">평창평화체</option>
-                    <option value="'BM Jua', sans-serif">배민 주아체</option>
+                    <option value="Paperlogy">Paperlogy</option>
+                    <option value="Jalnan2">잘난체2</option>
+                    <option value="Puzzle Sans">Puzzle Sans</option>
+                    <option value="Wonju">원주체</option>
+                    <option value="PyeongChang Peace">평창평화체</option>
+                    <option value="BM Jua">배민 주아체</option>
                   </optgroup>
                   <optgroup label="기본 폰트">
-                    <option value="'Arial',sans-serif">Arial</option>
-                    <option value="'Georgia',serif">Georgia</option>
-                    <option value="'Courier New',monospace">Courier</option>
-                    <option value="'Times New Roman',serif">Times</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Courier New">Courier</option>
+                    <option value="Times New Roman">Times</option>
                   </optgroup>
                 </select>
               </label>
               <div class="two-inputs">
                 <label class="editor-field">크기<input id="fontSize" type="number" min="8" max="160"></label>
                 <label class="editor-field">굵기
-                  <select id="fontWeight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select>
+                  <select id="fontWeight"><option>300</option><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option><option>900</option></select>
                 </label>
               </div>
-              <div class="two-inputs">
-                <label class="editor-field">글자색<input id="textColor" type="color"></label>
-                <label class="editor-field">배경색<input id="textBgColor" type="color"></label>
-              </div>
+              <label class="editor-field">글자색<input id="textColor" type="color"></label>
               <label class="editor-field">정렬
                 <select id="textAlign"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select>
               </label>
