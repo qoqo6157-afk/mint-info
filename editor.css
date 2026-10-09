@@ -363,3 +363,12 @@ details.effect-box[open] > summary{margin-bottom:8px}
   overflow:hidden;
   line-height:1.3;
 }
+
+
+/* SHIMEJI V1 */
+.shimeji-asset-list{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
+.shimeji-asset-item{position:relative;width:46px;height:46px;border:1px solid #d7ebe6;border-radius:10px;background:repeating-conic-gradient(#eef6f4 0 25%,#fff 0 50%) 50%/10px 10px;overflow:hidden}
+.shimeji-asset-item img{width:100%;height:100%;object-fit:contain}
+.shimeji-asset-item button{position:absolute;right:1px;top:1px;width:18px;height:18px;border:0;border-radius:50%;background:rgba(35,52,49,.72);color:#fff;cursor:pointer;line-height:18px;padding:0}
+.shimeji-preview-layer{position:absolute;inset:0;z-index:10000;pointer-events:none;overflow:hidden}
+.shimeji-preview-sprite{position:absolute;left:0;bottom:0;object-fit:contain;transform-origin:center bottom;will-change:transform;filter:drop-shadow(0 3px 2px rgba(0,0,0,.1))}

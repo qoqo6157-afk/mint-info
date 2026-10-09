@@ -4,6 +4,7 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const canvas = $('#pageCanvas');
 const elementsLayer = $('#elementsLayer');
 const fxLayer = $('#fxLayer');
+const shimejiPreviewLayer = $('#shimejiPreviewLayer');
 const stageScaler = $('#stageScaler');
 const stageViewport = $('#stageViewport');
 const layerList = $('#layerList');
@@ -37,7 +38,8 @@ const DEFAULT_CONFIG = {
     snow: { enabled: false, count: 35, speed: 6, size: 11, drift: 35 },
     petal: { enabled: false, count: 24, speed: 7, size: 14, drift: 55, spin: 540 },
     rain: { enabled: false, count: 70, speed: 1.5, length: 26, angle: 10 },
-    sparkle: { enabled: true, count: 8, interval: 900, duration: 2.2, size: 18 }
+    sparkle: { enabled: true, count: 8, interval: 900, duration: 2.2, size: 18 },
+    shimeji: { enabled:false, images:[], count:3, size:76, speed:1, bounce:.65 }
   },
   elements: []
 };
@@ -336,7 +338,7 @@ function baseElement(type) {
   } else if (type === 'shape') {
     common.props = {
       fill:'#ffffff', border:'#9adfce', borderWidth:2,
-      text:'', textColor:'#173b35', fontWeight:'700',
+      text:'', textColor:'#173b35', fontWeight:'700', fontFamily:'system-ui',
       textAlign:'center', textVAlign:'center', shapeFontSize:24
     };
     common.layout = defaultLayout(180,180,260,180);
@@ -496,6 +498,7 @@ function buildContent(el){
     const ss=shapeTextStyleOf(el);
     d.style.fontSize=`${ss.fontSize}px`;
     d.style.fontWeight=el.props.fontWeight||'700';
+    d.style.fontFamily=cssFontFamily(el.props.fontFamily||'system-ui');
     d.style.color=el.props.textColor||'#173b35';
     d.style.textAlign=el.props.textAlign||'center';
     d.style.alignItems=el.props.textVAlign||'center';
@@ -716,7 +719,61 @@ function renderCanvasSize(){
   $('#modeLabel').textContent=mode==='desktop'?'PC 캔버스':'MOBILE 캔버스';
   $('#canvasSizeText').textContent=`${c.width} × ${c.height}`;
 }
-function renderEffects(){MintEffects.render(fxLayer,config.effects)}
+
+let shimejiPreviewAnim=0;
+function stopShimejiPreview(){
+  cancelAnimationFrame(shimejiPreviewAnim);
+  shimejiPreviewAnim=0;
+  if(shimejiPreviewLayer) shimejiPreviewLayer.innerHTML='';
+}
+function renderShimejiPreview(){
+  stopShimejiPreview();
+  const s=config.effects?.shimeji;
+  if(!shimejiPreviewLayer || !s?.enabled || !Array.isArray(s.images) || !s.images.length) return;
+  const count=Math.max(1,Math.min(12,Number(s.count||3)));
+  const size=Math.max(24,Number(s.size||76));
+  const speed=Math.max(.1,Number(s.speed||1));
+  const sprites=[];
+  for(let i=0;i<count;i++){
+    const img=document.createElement('img');
+    img.className='shimeji-preview-sprite';
+    img.src=s.images[i%s.images.length];
+    img.style.width=size+'px';img.style.height=size+'px';
+    const maxX=Math.max(0,(config.canvas?.[mode]?.width||390)-size);
+    const sprite={el:img,x:Math.random()*maxX,vx:(Math.random()>.5?1:-1)*(.3+Math.random()*.6)*speed};
+    img.style.transform=`translate(${sprite.x}px,0) scaleX(${sprite.vx<0?-1:1})`;
+    shimejiPreviewLayer.appendChild(img);
+    sprites.push(sprite);
+  }
+  let last=performance.now();
+  const tick=now=>{
+    const dt=Math.min(32,now-last);last=now;
+    const maxX=Math.max(0,(config.canvas?.[mode]?.width||390)-size);
+    sprites.forEach(sp=>{
+      sp.x+=sp.vx*dt;
+      if(sp.x<0){sp.x=0;sp.vx=Math.abs(sp.vx)}
+      if(sp.x>maxX){sp.x=maxX;sp.vx=-Math.abs(sp.vx)}
+      sp.el.style.transform=`translate(${sp.x}px,0) scaleX(${sp.vx<0?-1:1})`;
+    });
+    shimejiPreviewAnim=requestAnimationFrame(tick);
+  };
+  shimejiPreviewAnim=requestAnimationFrame(tick);
+}
+function renderShimejiAssets(){
+  const box=$('#shimejiAssetList');if(!box)return;
+  const arr=config.effects?.shimeji?.images||[];
+  box.innerHTML='';
+  arr.forEach((url,i)=>{
+    const item=document.createElement('div');item.className='shimeji-asset-item';
+    item.innerHTML=`<img src="${escapeHtml(url)}" alt=""><button type="button" aria-label="삭제">×</button>`;
+    item.querySelector('button').onclick=()=>{
+      snapshot();config.effects.shimeji.images.splice(i,1);renderShimejiAssets();renderShimejiPreview();markDirty();
+    };
+    box.appendChild(item);
+  });
+}
+function renderEffects(){MintEffects.render(fxLayer,config.effects);renderShimejiPreview()}
+
 function renderAll(){renderCanvasSize();applyBackground();renderElements();renderLayers();renderInspector();syncPageControls();renderEffects()}
 
 function renderInspectorCore(){
@@ -741,6 +798,7 @@ function renderInspectorCore(){
     $('#shapeBorderWidth').value=el.props.borderWidth||0;
     $('#shapeText').value=el.props.text||'';
     $('#shapeTextColor').value=el.props.textColor||'#173b35';
+    $('#shapeFontFamily').value=normalizeFontFamily(el.props.fontFamily||'system-ui');
     $('#shapeFontWeight').value=el.props.fontWeight||'700';
     $('#shapeTextAlign').value=el.props.textAlign||'center';
     $('#shapeTextVAlign').value=el.props.textVAlign||'center';
@@ -996,7 +1054,7 @@ function bindInspector(){
     if(id==='elName')el.name=$('#elName').value;if(id==='elX')l.x=+$(`#${id}`).value;if(id==='elY')l.y=+$(`#${id}`).value;if(id==='elW')l.w=Math.max(20,+$(`#${id}`).value);if(id==='elH')l.h=Math.max(20,+$(`#${id}`).value);if(id==='rotation')el.rotation=+$(`#${id}`).value;if(id==='opacity')el.opacity=+$(`#${id}`).value;if(id==='borderRadius')el.borderRadius=+$(`#${id}`).value;
     renderElements();renderLayers();markDirty();renderInspector();
   }));
-  const map={textValue:['text','text'],fontWeight:['text','fontWeight'],textColor:['text','color'],textAlign:['text','align'],textShadow:['text','textShadow'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeText:['shape','text'],shapeTextColor:['shape','textColor'],shapeFontWeight:['shape','fontWeight'],shapeTextAlign:['shape','textAlign'],shapeTextVAlign:['shape','textVAlign'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
+  const map={textValue:['text','text'],fontWeight:['text','fontWeight'],textColor:['text','color'],textAlign:['text','align'],textShadow:['text','textShadow'],buttonText:['button','text'],buttonUrl:['button','url'],buttonBg:['button','bg'],buttonColor:['button','color'],shapeText:['shape','text'],shapeTextColor:['shape','textColor'],shapeFontFamily:['shape','fontFamily'],shapeFontWeight:['shape','fontWeight'],shapeTextAlign:['shape','textAlign'],shapeTextVAlign:['shape','textVAlign'],shapeFill:['shape','fill'],shapeBorder:['shape','border'],shapeBorderWidth:['shape','borderWidth'],imageFit:['image','fit']};
   Object.entries(map).forEach(([id])=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el)return;snapshot();let v=$('#'+id).type==='checkbox'?$('#'+id).checked:$('#'+id).value;if(['shapeBorderWidth'].includes(id))v=+v;el.props[map[id][1]]=v;renderElements();markDirty()}));
   const responsiveTextMap={fontSize:'fontSize',letterSpacing:'letterSpacing',lineHeight:'lineHeight',textStroke:'textStroke'};
   Object.entries(responsiveTextMap).forEach(([id,key])=>$('#'+id).addEventListener('input',()=>{const el=selected();if(!el||el.type!=='text')return;snapshot();ensureResponsive(el);el.responsive[mode][key]=+$('#'+id).value;renderElements();markDirty()}));
@@ -1101,16 +1159,33 @@ function bindInspector(){
 function syncPageControls(){
   const b=config.background;$('#bgType').value=b.type;$('#bgColor1').value=b.color1;$('#bgColor2').value=b.color2;$('#bgAngle').value=b.angle;$('#bgAngleValue').textContent=`${b.angle}°`;$('#bgFit').value=b.fit||'cover';
   const e=config.effects;
-  const defs={snow:['enabled','count','speed','size','drift'],petal:['enabled','count','speed','size','drift','spin'],rain:['enabled','count','speed','length','angle'],sparkle:['enabled','count','interval','duration','size']};
+  const defs={snow:['enabled','count','speed','size','drift'],petal:['enabled','count','speed','size','drift','spin'],rain:['enabled','count','speed','length','angle'],sparkle:['enabled','count','interval','duration','size'],shimeji:['enabled','count','size','speed','bounce']};
   Object.entries(defs).forEach(([k,keys])=>keys.forEach(prop=>{const id=k+prop[0].toUpperCase()+prop.slice(1);const input=$('#'+id);if(!input)return;if(input.type==='checkbox')input.checked=!!e[k][prop];else input.value=e[k][prop];const v=$('#'+id+'V');if(v)v.textContent=e[k][prop];}));
+  renderShimejiAssets();
 }
 
 function openEffectPanels(){}
 
 function bindPageControls(){
   ['bgType','bgColor1','bgColor2','bgAngle','bgFit'].forEach(id=>$('#'+id).addEventListener('input',()=>{snapshot();const b=config.background;if(id==='bgType')b.type=$('#bgType').value;if(id==='bgColor1')b.color1=$('#bgColor1').value;if(id==='bgColor2')b.color2=$('#bgColor2').value;if(id==='bgAngle')b.angle=+$('#bgAngle').value;if(id==='bgFit')b.fit=$('#bgFit').value;applyBackground();syncPageControls();markDirty()}));
-  const defs={snow:['Enabled','Count','Speed','Size','Drift'],petal:['Enabled','Count','Speed','Size','Drift','Spin'],rain:['Enabled','Count','Speed','Length','Angle'],sparkle:['Enabled','Count','Interval','Duration','Size']};
+  const defs={snow:['Enabled','Count','Speed','Size','Drift'],petal:['Enabled','Count','Speed','Size','Drift','Spin'],rain:['Enabled','Count','Speed','Length','Angle'],sparkle:['Enabled','Count','Interval','Duration','Size'],shimeji:['Enabled','Count','Size','Speed','Bounce']};
   Object.entries(defs).forEach(([k,props])=>props.forEach(cap=>{const id=k+cap;$('#'+id).addEventListener('input',()=>{snapshot();const prop=cap[0].toLowerCase()+cap.slice(1);const inp=$('#'+id);config.effects[k][prop]=inp.type==='checkbox'?inp.checked:+inp.value;syncPageControls();renderEffects();markDirty()})}));
+  $('#shimejiUploadBtn').onclick=()=>$('#shimejiInput').click();
+  $('#shimejiClearBtn').onclick=()=>{snapshot();config.effects.shimeji.images=[];renderShimejiAssets();renderShimejiPreview();markDirty();toast('시메지 PNG를 모두 제거했어요')};
+  $('#shimejiInput').onchange=async e=>{
+    const files=[...(e.target.files||[])];
+    if(!files.length)return;
+    try{
+      const valid=files.filter(f=>f.type==='image/png'||/\.png$/i.test(f.name||''));
+      if(valid.length!==files.length)toast('시메지는 PNG 파일만 업로드할 수 있어요.',true);
+      for(const f of valid){
+        const url=await uploadAsset(f);
+        config.effects.shimeji.images.push(url);
+      }
+      if(valid.length){snapshot();config.effects.shimeji.enabled=true;syncPageControls();renderEffects();markDirty();toast('시메지 PNG 추가 완료')}
+    }catch(err){toast(err.message,true)}
+    e.target.value='';
+  };
   $('#bgImageBtn').onclick=()=>$('#bgImageInput').click();
 
   $('#bgImageRemoveBtn').onclick=()=>{
@@ -1207,7 +1282,8 @@ function mergeConfig(c){
     snow:{...n.effects.snow,...(c.effects?.snow||{})},
     petal:{...n.effects.petal,...(c.effects?.petal||{})},
     rain:{...n.effects.rain,...(c.effects?.rain||{})},
-    sparkle:{...n.effects.sparkle,...(c.effects?.sparkle||{})}
+    sparkle:{...n.effects.sparkle,...(c.effects?.sparkle||{})},
+    shimeji:{...n.effects.shimeji,...(c.effects?.shimeji||{})}
   };
   n.elements=Array.isArray(c.elements)?c.elements:[];
   n.elements.forEach(el=>{
@@ -1219,6 +1295,10 @@ function mergeConfig(c){
       el.props.fontFamily=normalizeFontFamily(el.props.fontFamily);
       el.props.background='transparent';
       el.boxShadow=false;
+    }
+    if(el.type==='shape'){
+      el.props=el.props||{};
+      el.props.fontFamily=normalizeFontFamily(el.props.fontFamily||'system-ui');
     }
     ensureResponsive(el);
   });
